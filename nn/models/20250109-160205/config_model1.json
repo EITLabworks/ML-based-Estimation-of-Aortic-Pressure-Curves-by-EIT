@@ -1,0 +1,24 @@
+{
+  "data_prefix": "/C:/Users/pfuchs/Documents/Data/PulHyp_k20_20old/",
+  "model_prefix": "./models/",
+  "training_examples": [
+    "P01_PulHyp",
+    "P02_PulHyp",
+    "P03_PulHyp",
+    "P04_PulHyp",
+    "P05_PulHyp",
+    "P06_PulHyp",
+    "P07_PulHyp",
+    "P08_PulHyp",
+    "P09_PulHyp",
+    "P10_PulHyp"
+  ],
+  "aorta_max_length": 1024,
+  "eit_length": 64,
+  "epochs": 300,
+  "batch_size": 16,
+  "para_size": 42,
+  "para_type": "Linear",
+  "Criteria":"Versuch Maxpooling in den ersten beiden Conv layern und dann angepasste Strides",
+  "Minremoved": "False"
+}

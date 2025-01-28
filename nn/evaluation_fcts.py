@@ -1,0 +1,600 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from src.reconstruction import recon_paras_block
+from scipy.stats.stats import pearsonr
+from sklearn.preprocessing import LabelEncoder
+TITLE_SIZE = 24
+FONT_SIZE = 20
+LEGEND_SIZE = 16
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------------------------------------- #
+# Help functions
+# ------------------------------------------------------------------------------------------------------------- #
+def append_aorta(aorta_seg, aorta_estimated=None):
+    """
+    Appends aortas segments into a longer time piece, optionally appends a second list of segments appended for
+    each segment to have the same length
+    :param aorta_seg: list or aorta segments, each segment being a numpy array
+    :param aorta_estimated: list or aorta segments, each segment being a numpy array, each segment is appendend, so that
+    segments of both imput list have the same length
+    :return: the single array of appended segmends or two arrays of appended segments
+    """
+    vec = np.array([])
+    if aorta_estimated == None:
+        for i in range(len(aorta_seg)):
+            vec = np.append(vec, aorta_seg[i])
+        return vec
+    else:
+        vec_estimated = np.array([])
+        aorta_seg = aorta_seg.copy()
+        aorta_estimated = aorta_estimated.copy()
+        for i in range(len(aorta_seg)):
+            # check length
+            dist = len(aorta_seg[i]) - len(aorta_estimated[i])
+            if dist > 0:
+                aorta_estimated[i] = np.append(aorta_estimated[i], aorta_estimated[i][-1] * np.ones(dist))
+            elif dist < 0:
+                aorta_seg[i] = np.append(aorta_seg[i], aorta_seg[i][-1] * np.ones(np.abs(dist)))
+            vec = np.append(vec, aorta_seg[i])
+            vec_estimated = np.append(vec_estimated, aorta_estimated[i])
+        return vec, vec_estimated
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def calc_nmse(seg, ori):
+    """
+    Calculates the NMSE (normalized mean squared error)
+    :param seg: Estimated data
+    :param ori: Original data
+    :return: NMSE
+    """
+    return np.mean((seg - ori) ** 2) / np.var(ori)
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def calc_mse(seg, ori):
+    """
+    Calculates the MSE (mean squared error)
+    :param seg: Estimated data
+    :param ori: Original data
+    :return: MSE
+    """
+    return np.mean((seg - ori) ** 2)
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def calc_mae(seg, ori):
+    """
+    Calculates the MAE (mean absolute error)
+    :param seg: Estimated data
+    :param ori: Original data
+    :return: MAE
+    """
+    return np.mean(np.abs((seg - ori)))
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def calc_error_block(noiseSig, sig, errortype="NMSE"):
+    """
+    Takes a block of original data samples a compares it to an estimated/noised block by calculating an error for each
+    segment
+    :param noiseSig: List/Array or Arrays with noised segments      [Len L x individiual semgent length]
+    :param sig: List/Array or Arrays with original data segments    [Len L x individiual semgent length]
+    :param errortype: Type of error to be calculated MAE, MSE or NMSE
+    :return: Array with error values [Len L], Array with error values in dB [Len L]
+    """
+    error_vec = np.zeros(len(noiseSig))
+    error_vec_db = np.zeros(len(noiseSig))
+    noiseSig = noiseSig.copy()      # Make sure the original data is not altered
+    sig = sig.copy()
+    # iteration over each segment
+    for i in range(len(noiseSig)):
+        # check length
+        if len(noiseSig[i]) > len(sig[i]):
+            sig[i] = np.append(sig[i], sig[i][-1] * np.ones(len(noiseSig[i]) - len(sig[i])))
+        elif len(noiseSig[i]) < len(sig[i]):
+            noiseSig[i] = np.append(noiseSig[i], noiseSig[i][-1] * np.ones(len(sig[i]) - len(noiseSig[i])))
+
+        if errortype == "MSE":
+            error_vec[i] = calc_mse(noiseSig[i], sig[i])
+        elif errortype == "MAE":
+            error_vec[i] = calc_mae(noiseSig[i], sig[i])
+        else:
+            error_vec[i] = calc_nmse(noiseSig[i], sig[i])
+        if np.isnan(error_vec[i]):
+            print("NAN")
+            error_vec_db[i] = 0
+        else:
+            error_vec_db[i] = 10 * np.log10(error_vec[i])
+    return error_vec, error_vec_db
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def calc_error_block_mean_form(noiseSig, sig, errortype="NMSE"):
+    """
+    Takes a block of original data samples a compares it to an estimated/noised block by calculating an error for each
+    segment. For each segment, the data is seperated into the mean of the segment and the residual (form); the error
+    is seperately calulated for the means and the residual signal shapes/forms
+    :param noiseSig: List/Array or Arrays with noised segments      [Len L x individiual semgent length]
+    :param sig: List/Array or Arrays with original data segments    [Len L x individiual semgent length]
+    :param errortype: Type of error to be calculated MAE, MSE or NMSE
+    :return: Array with error values for shape/form [Len L], Array with error values of the mean [Len L]
+    """
+    error_vec = np.zeros(len(noiseSig))
+    mean_noisesig = np.zeros(len(noiseSig))
+    mean_sig = np.zeros(len(noiseSig))
+    form_noisesig = []
+    form_sig = []
+
+    for k in range(len(noiseSig)):
+        mean_noisesig[k] = np.mean(noiseSig[k])
+        form_noisesig.append(noiseSig[k] - mean_noisesig[k])
+
+        mean_sig[k] = np.mean(sig[k])
+        form_sig.append(sig[k] - mean_sig[k])
+
+    if errortype == "MSE":
+        error_mean = (mean_noisesig - mean_sig) ** 2
+
+        mean_val = np.mean(error_mean)
+    elif errortype == "MAE":
+        error_mean = mean_noisesig - mean_sig
+
+    # iteration over each segment
+    for i in range(len(form_noisesig)):
+        # check length
+        if len(form_noisesig[i]) > len(form_sig[i]):
+            form_sig[i] = np.append(form_sig[i], form_sig[i][-1] * np.ones(len(form_noisesig[i]) - len(form_sig[i])))
+        elif len(form_noisesig[i]) < len(form_sig[i]):
+            form_noisesig[i] = np.append(form_noisesig[i],
+                                         form_noisesig[i][-1] * np.ones(len(form_sig[i]) - len(form_noisesig[i])))
+
+        if errortype == "MSE":
+            error_vec[i] = calc_mse(form_noisesig[i], form_sig[i])
+        elif errortype == "MAE":
+            error_vec[i] = calc_mae(form_noisesig[i], form_sig[i])
+        else:
+            error_vec[i] = calc_nmse(form_noisesig[i], form_sig[i])
+
+    return error_vec, error_mean
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def make_int(v):
+    """
+    Makes every value of the input vector to an integer number
+    """
+    for q in range(len(v)):
+        v[q] = int(v[q])
+    return v
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def is_outlier(points, thresh=3.5):
+    """
+    Returns a boolean array with True if points are outliers and False
+    otherwise.
+
+    Parameters:
+    -----------
+        points : An numobservations by numdimensions array of observations
+        thresh : The modified z-score to use as a threshold. Observations with
+            a modified z-score (based on the median absolute deviation) greater
+            than this value will be classified as outliers.
+
+    Returns:
+    --------
+        mask : A numobservations-length boolean array.
+
+    References:
+    ----------
+        Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and
+        Handle Outliers", The ASQC Basic References in Quality Control:
+        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
+    """
+    if len(points.shape) == 1:
+        points = points[:, None]
+    median = np.median(points, axis=0)
+    diff = np.sum((points - median) ** 2, axis=-1)
+    diff = np.sqrt(diff)
+    med_abs_deviation = np.median(diff)
+
+    modified_z_score = 0.6745 * diff / med_abs_deviation
+    for k in range(len(points)):
+        if points[k] < median:
+            modified_z_score[k] = thresh - 1
+
+    return modified_z_score > thresh
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------------------------------------- #
+# Plotter functions
+
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_parameters(paras, parasori, title, Smax=100, bShow=True, bSave=False, fSavePath="C:/"):
+    """
+    Plots Smax  aorta parameters (representing the curve) overlaying over each other
+    :param paras: Estimated aortic pressure parameters as list of segments [Num segments L x Para length]
+    :param parasori: Original aortic parameters as list of segments [Num segments L x Para length]
+    :param title: Plot title
+    :param Smax: Max number of curves to plot
+    :param bShow: if to show the plot
+    :param bSave: if to save the plot
+    :param fSavePath: Path to save the plot
+    """
+    Smax = Smax
+    if len(paras) < Smax:
+        Smax = len(paras)
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(17, 9))
+    plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.08)
+    for axi in ax.flat:
+        for axis in ["top", "bottom", "left", "right"]:
+            axi.spines[axis].set_linewidth(2)
+    for q in range(Smax):
+        ax[1].plot(paras[q], "x", color="blue", linewidth="0.8")
+        ax[0].plot(parasori[q], "x", color="red", linewidth="0.8")
+    ax[0].grid(linewidth=0.8)
+    ax[1].grid(linewidth=0.8)
+    ax[1].set_xlabel("Parameter index", loc="right", fontsize=FONT_SIZE)
+    ax[1].set_title("Estimated parameters " + title, fontsize=TITLE_SIZE)
+    ax[0].set_title("Original parameters " + title, fontsize=TITLE_SIZE)
+    if bSave:
+        fig.savefig(fSavePath + title + "ParaEstimation.png")
+    if bShow:
+        plt.show()
+
+
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_history(history, type, bShow=True, bSave=False, fSavePath="C:/"):
+    """
+    Plot Training history of the neural network
+    :param history: History strucutre
+    :param type: Measurement type to plot
+    :param bShow: if to show the plot
+    :param bSave: if to save the plot
+    :param fSavePath: Path to save the plot
+    """
+    fig, ax = plt.subplots(figsize=(17, 9))
+    plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.1)
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(2)
+    ax.plot(history.history[type], "b", linewidth=2)
+    ax.plot(history.history['val_' + type], "r", linewidth=2)
+    ax.set_title('Model ' + type, fontsize=TITLE_SIZE)
+    ax.set_ylabel(type, loc="top", fontsize=FONT_SIZE)
+    ax.set_xlabel('Epoch', loc="right", fontsize=FONT_SIZE)
+    ax.legend(['Training', 'Validation'], loc='upper left', fontsize=LEGEND_SIZE)
+    ax.grid(linewidth=0.8)
+    if bSave:
+        fig.savefig(fSavePath + type + "TrainingHistory.png")
+    if bShow:
+        plt.show()
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_single_recon_curve(curve, curveori, title, paratype, segment=np.array([None]), recon_given=True,
+                            bShow=True, bSave=False, fSavePath="C:/"):
+    """
+    Plots one reconstructed aorta curve
+    :param curves: Estimated aortic pressure curve as one segment array  [individual segment len] or only paras
+    :param curveoris: Original parametric aortic pressure curve as one segment array  [individual segment len] or only paras
+    :param title: Plot title
+    :param paratype: Type of paras for reconstruction
+    :param segment: Original parametric aortic pressure curve [individual segment len]
+    :param recon_given: If the reconstructed curves are already given /or if reconstruction should be performed
+    :param bShow: if to show the plot
+    :param bSave: if to save the plot
+    :param fSavePath: Path to save the plot
+    """
+    if not recon_given:
+        curve = recon_paras_block([curve], paratype)
+        curve = curve[0]
+        curveori = recon_paras_block([curveori], paratype)
+        curveori = curveori[0]
+
+    fig, ax = plt.subplots(figsize=(17, 9))
+    plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.08)
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(2)
+    ax.plot(curve, color="blue", linewidth=2, label="Estimated curve")
+    ax.plot(curveori, color="red", linewidth=2, label="Parametric curve")
+    if segment.any() != None:
+        ax.plot(segment, color="green", linewidth=2, label="Original curve")
+    ax.grid(linewidth=0.8)
+    ax.legend(fontsize=LEGEND_SIZE)
+    ax.set_title(title, fontsize=TITLE_SIZE)
+    ax.set_xlabel("Samples", fontsize=FONT_SIZE, loc="right")
+    ax.set_ylabel("Pressure [mm Hg]", loc="top", fontsize=FONT_SIZE)
+    if bSave:
+        fig.savefig(fSavePath + title + "ReconSig.png")
+    if bShow:
+        plt.show()
+
+
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_4_recon_curves_paper(curves, curveoris, title, paratype, segment=[np.array([None])], recon_given=True,
+                        ind=[5, 25, 40, 50], bShow=True, bSave=False, fSavePath="C:/"):
+    """
+    Plots 4 reconstructed aorta curves into on plot
+    :param curves: Estimated aortic pressure curves as list of segments [Num segments L x individual segment len] or only paras
+    :param curveoris: Original parametric aortic pressure curves [Num segments L x individual segment len] or only paras
+    :param title: Plot title
+    :param paratype: Type of paras for reconstruction
+    :param segment: Original parametric aortic pressure curves [Num segments L x individual segment len]
+    :param recon_given: If the reconstructed curves are already given /or if reconstruction should be performed
+    :param ind: Indices from curves and curvesoris for which segments to use
+    :param bShow: if to show the plot
+    :param bSave: if to save the plot
+    :param fSavePath: Path to save the plot
+    """
+    curves_used = []
+    curves_used_ori = []
+    for i in ind:
+        curves_used.append(curves[i])
+        curves_used_ori.append(curveoris[i])
+
+    curve = curves_used
+    curveori = curves_used_ori
+    fontSize = 22
+    title_Size = 24
+    plt.rcParams["font.family"] = "Times New Roman"
+    plt.rc('xtick', labelsize=fontSize)
+    plt.rc('ytick', labelsize=fontSize)
+    # Figure
+    fig, ax = plt.subplots(2, 2, figsize=(17, 9))
+
+    plt.subplots_adjust(left=0.062, top=0.986, right=0.99, bottom=0.08, wspace=0.05, hspace=0.07)
+    r = 0
+    c = 0
+    for axi in ax.flat:
+        for axis in ["top", "bottom", "left", "right"]:
+            axi.spines[axis].set_linewidth(2)
+        axi.set_facecolor("whitesmoke")
+    for q in range(len(ind)):
+        ax[r,c].set_ylim([80,130])
+        ax[r, c].plot(curve[q], color="blue", linewidth=2, label="Estimated curve")
+        ax[r, c].plot(curveori[q], color="red", linewidth=2, label="Parametric curve")
+        if segment[0].any() != None:
+            ax[r, c].plot(segment[q], color="green", linewidth=2, label="Original curve")
+        ax[r, c].grid(linewidth=0.8)
+        ax[r, c].legend(fontsize=fontSize)
+    #    ax[r, c].set_title(title, fontsize=FONT_SIZE)
+        c += 1
+        if c == 2:
+            c = 0
+            r += 1
+    ax[0,0].set_xticklabels([])
+    ax[0,1].set_xticklabels([])
+    ax[1,1].set_yticklabels([])
+    ax[0,1].set_yticklabels([])
+    ax[1, 1].set_xlabel("Samples", fontsize=FONT_SIZE, loc="right")
+    ax[0, 0].set_ylabel("Pressure [mm Hg]", fontsize=FONT_SIZE, loc="top")
+    if bSave:
+        fig.savefig(fSavePath + title + "4Plot.png")
+        fig.savefig(fSavePath + title + "4Plot.svg")
+      #  fig.savefig(fSavePath + title + "4Plot.pgf")
+    #if bShow:
+    plt.show()
+
+#todo gucken ob so fertig, dann min mean max und relative error soweit vorbereiten
+
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_appended_recon_curves(curves, curveoris, title, paratype, segment=np.array([None]), recon_given=True,
+                               bShow=True, bSave=False, fSavePath="C:/", ):
+    """
+    Plots appended reconstructed aorta curves
+    :param curves: Estimated aortic pressure curves as list of segments [Num segments L x individual segment len] or only paras
+    :param curveoris: Original parametric aortic pressure curves [Num segments L x individual segment len] or only paras
+    :param title: Plot title
+    :param paratype: Type of paras for reconstruction
+    :param segment: Original parametric aortic pressure curves [Num segments L x individual segment len]
+    :param recon_given: If the reconstructed curves are already given /or if reconstruction should be performed
+    :param bShow: if to show the plot
+    :param bSave: if to save the plot
+    :param fSavePath: Path to save the plot
+    """
+    if not recon_given:
+        curves = recon_paras_block(curves, paratype)
+        curveoris = recon_paras_block(curveoris, paratype)
+
+    curve_original, curve_estimated = append_aorta(curveoris, curves)
+    segment = append_aorta(segment)
+
+    fig, ax = plt.subplots(figsize=(17, 9))
+    plt.subplots_adjust(left=0.064, top=0.98, right=0.99, bottom=0.08)
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(2)
+    ax.plot(curve_original, color="steelblue", linewidth=3, label="AP Curves")
+    ax.plot(curve_estimated, color="maroon", linewidth=3, label="Estimated AP Curves")
+
+    if segment.any() != None:
+        ax.plot(segment, color="goldenrod", linewidth=3, label="Original Curves")
+  #  ax.grid(linewidth=0.8)
+    ax.grid()
+    ax.legend(fontsize=LEGEND_SIZE)
+    ax.legend(fontsize=FONT_SIZE)
+    ax.set_ylabel("Pressure [mm Hg]", loc="top", size=FONT_SIZE)
+    ax.set_xlabel("Samples", loc="right", size=FONT_SIZE)
+    ax.yaxis.set_tick_params(labelsize=FONT_SIZE)
+    ax.xaxis.set_tick_params(labelsize=FONT_SIZE)
+  #  ax.set_title(title, size=22)
+    if bSave:
+        fig.savefig(fSavePath + title + " AppendRecon.png")
+    if bShow:
+        plt.show()
+
+
+
+# ------------------------------------------------------------------------------------------------------------- #
+def plot_histogram_error(title, e_vec, bShow=True, bSave=False):
+    """
+    Plots histogram of error
+    :param title: Title of plot
+    :param e_vec: Data vector
+    :param bShow: If the plot should be shown
+    :param bSave:
+    """
+    print("The mean error is " + str(np.mean(e_vec)))
+    print("The std of the error is " + str(np.std(e_vec)))
+    e_vec = make_int(e_vec)
+    n_bins = 20
+    fig, ax = plt.subplots(figsize=(17, 9))
+    ax.hist(e_vec, bins=n_bins)
+    ax.set_title(title)
+    if bShow:
+        plt.show()
+
+
+
+# Von jacob
+def Pearson_correlation(Y_true,Y_pred)->list:
+    """
+    The Pearson correlation coefficient [1]_ measures the linear relationship
+    between two datasets. Like other correlation
+    coefficients, this one varies between -1 and +1 with 0 implying no
+    correlation. Correlations of -1 or +1 imply an exact linear relationship.
+    Positive correlations imply that as x increases, so does y. Negative
+    correlations imply that as x increases, y decreases.
+
+    Return:
+    list of Pearson correlation coefficients
+    """
+    corr_number = list()
+    for true,pred in zip(Y_true,Y_pred):
+        p_nr, _ = pearsonr(true, pred)
+        corr_number.append(p_nr)
+    corr_number = np.array(corr_number)
+    print("Pearson correlation coefficient mean", np.mean(corr_number))
+    return corr_number
+
+
+
+def plot_relative_error_aorta(Y_true, Y_pred, std, var, mean, s_name=None, bShow=False, bSave=False, fSavePath="C:/"):
+    mean_err = np.mean(np.abs((Y_pred - Y_true) / Y_true), axis=0) * 100
+    print(mean_err.shape)
+    std_err = np.std((Y_pred - Y_true) / Y_true, axis=0) * 100  # evtl mit abs
+    std_err_abs = np.std(np.abs((Y_pred - Y_true) / Y_true), axis=0) * 100
+    var_err = np.var((Y_pred - Y_true) / Y_true, axis=0) * 100  #evtl mit abs
+    L = len(Y_true)
+    MAE = np.sum(np.abs(Y_true - Y_pred)) / 1024 /L
+    MSE = np.sum((Y_true - Y_pred) ** 2) / 1024 /L
+    PN = np.mean(Pearson_correlation(Y_true, Y_pred))
+
+    print("MSE", MSE)
+    print("MAE", MAE)
+    print("Pearson number", PN)
+    plt.figure(figsize=(6, 2))
+    if mean:
+        plt.plot(mean_err, label="Relative mean absolute deviation")
+    if std:
+        plt.plot(std_err, label="Standard deviation")
+        plt.plot(std_err_abs, label="Standard deviation of absolute error",color="red")
+    if var:
+        plt.plot(var_err, label="Variance")
+    plt.legend()
+    plt.xlabel("Aorta pressure curve index")
+    plt.xticks(ticks=np.linspace(0, 1024, 5), labels=np.linspace(0, 1024, 5, dtype=int))
+    plt.ylabel("Relative error (%)")
+    plt.grid()
+    plt.tight_layout()
+    if bSave:
+        plt.savefig(fSavePath + s_name + " RelativeError.png")
+    if bShow:
+        plt.show()
+    return MAE, MSE, PN
+
+
+
+
+
+def consecutive_error_blockwise(y, yhat, piginfo):
+    # y has to be unshuffled
+    le_p = LabelEncoder()
+    le_b = LabelEncoder()
+    le_p.fit(piginfo[:, 0])
+    curvelen= len(y[0])
+    counter= 0
+    mae= 0
+    mse= 0
+    for p in le_p.classes_:
+        idx_p = np.where(piginfo[:, 0] == p)
+        le_b.fit(np.squeeze(piginfo[idx_p, 1]))
+        for b in le_b.classes_:
+            idx = np.array(np.where((piginfo[:, 0] == p) & (piginfo[:, 1] == b))[0])
+            print(idx)
+            error_init = np.mean(y[idx[0]]) - np.mean(yhat[idx[0]])
+            print(error_init)
+            y_partial = y[idx[1:]] +error_init
+            E = (y[idx[1:]] -(yhat[idx[1:]] +error_init))
+            counter += len(idx)-1
+            mae += np.sum(np.abs(E))
+            mse += np.sum(np.square(E))
+    mae = mae / counter /curvelen
+    mse = mse / curvelen/  counter
+    print("MSE", mse)
+    print("MAE", mae)
+
+
+
+from typing import List
+
+
+def split_indices_by_value_range(values: List[float], x: int) -> List[List[int]]:
+    """
+    Split the value range [0, 1] into x parts and return a list of index arrays,
+    where each array contains the indices of the input values that fall within the corresponding range.
+
+    Args:
+    - values (List[float]): List of values ranging from 0 to 1.
+    - x (int): Number of parts to split the value range into.
+
+    Returns:
+    - List[List[int]]: A list of index lists, where each sublist contains the indices of values that fall in the corresponding range.
+    """
+
+    if x <= 0:
+        raise ValueError("Number of parts 'x' must be a positive integer.")
+    # Create an empty list to hold the indices for each range
+    indices_per_range = [[] for _ in range(x)]
+    # Calculate the size of each range segment
+    range_size = 1 / x
+    # Assign each value to the corresponding range
+    for idx, value in enumerate(values):
+        # Determine which range this value belongs to (clamp it to x-1 to handle value=1)
+        range_index = min(int(value // range_size), x - 1)
+        indices_per_range[range_index].append(idx)
+    return indices_per_range
+
+
+def error_over_venttype(mae_sig, vsig, xparts=20,name="none",  bShow=False, bSave=False, fSavePath="C:/"):
+    indices_per_range = split_indices_by_value_range(vsig, xparts)
+    esigs = []
+    for j in range(xparts):
+        vals= mae_sig[np.array(indices_per_range[j])]
+        esigs.append(vals)
+        print(len(vals))
+    fig, ax = plt.subplots(figsize=(12, 12))
+    bp1 = ax.boxplot(esigs, sym='', widths=0.3, meanline=False,
+                     showmeans=True, patch_artist=True,
+                     boxprops=dict(facecolor='lightblue', color='black', linewidth=3),
+                     medianprops=dict(color='maroon', linewidth=3))
+    ax.set_title("Average MAE depending on the ventilation state")
+    ax.grid()
+    ax.set_xticks(np.arange(0,1,20))
+    ax.set_xlabel("Ventilation State", loc="right")
+    ax.set_ylabel("Average MAE over an AP Curve", loc="top")
+    if bSave:
+        fig.savefig(fSavePath + name + "_VentilationError.png")
+    if bShow:
+        plt.show()

@@ -1,0 +1,17 @@
+{
+  "data_prefix": "C:/Users/pfuchs/Documents/Data/Data_npz/PulHyp_k20_20/Data_Linear/",
+  "model_prefix": "./models/",
+  "training_examples": [
+    "P02_PulHyp",
+    "P01_PulHyp",
+    "P03_PulHyp",
+    "P04_PulHyp"
+
+  ],
+  "aorta_max_length": 1024,
+  "eit_length": 64,
+  "epochs": 250,
+  "batch_size": 16,
+  "para_size": 28,
+  "para_type": "Linear"
+}

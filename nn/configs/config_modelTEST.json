@@ -1,0 +1,18 @@
+{
+  "data_prefix": "C:/Users/pfuchs/Documents/Data/Data_npz/PulHyp_k20_20_newSeg/Data_Linear/",
+  "model_prefix": "./models/",
+  "training_examples": [
+    "P01_PulHyp",
+    "P02_PulHyp",
+    "P09_PulHyp"
+  ],
+  "aorta_max_length": 1024,
+  "eit_length": 64,
+  "epochs": 4,
+  "batch_size": 16,
+  "para_size": 42,
+  "para_type": "Linear",
+  "Criteria":"Change of test_pig for linear with standard network structure",
+  "Minremoved": "False"
+
+}
