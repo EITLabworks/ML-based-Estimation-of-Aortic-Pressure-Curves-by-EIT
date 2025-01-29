@@ -1,0 +1,23 @@
+cff-version: 1.0.0
+title: >-
+  Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography
+message: >-
+  If you use this repository, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Patricia
+    family-names: Fuchs
+    email: pat.fuchs@uni-rostock.de
+    affiliation: Universität Rostock
+    orcid: 'https://orcid.org/0009-0006-4647-633X'
+repository-code: 'https://github.com/EITLabworks/ml-based-estimation-of-aortic-pressure-curves-by-EIT'
+url: 'https://github.com/EITLabworks/ml-based-estimation-of-aortic-pressure-curves-by-EIT'
+keywords:
+  - EIT
+  - Aortic pressure curve
+  - Machine Learning
+license: MIT
+version: 1.0
+doi: 
+date-released: '2025-01-31'
