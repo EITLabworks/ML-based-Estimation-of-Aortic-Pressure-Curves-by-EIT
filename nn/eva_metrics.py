@@ -25,11 +25,7 @@ class EvaMetrics:
         self.fSavePath = fSavePath
 
         # Different categories
-        self.bByIndex = False
-        self.bByParatype = True
         self.byMeanForm = True
-        self.byMinMax = True
-        self.bVisualMetrics = True
         self.bStandardMetrics = True
 
         # Metrics
@@ -39,12 +35,6 @@ class EvaMetrics:
         self.bMeanError = True
         self.bSTD = True  # and variance of the error
         self.bRScore = True  # Pearson coefficient tscore and p-value
-        self.bRsScore = True  # Spearman cooeficient
-        self.bR2Score = True
-        self.bExplainedvarianceScore = True
-        self.bDScore = True  # Mean poisson gamma and tweedle variance
-        self.bD2TweedleScore = True
-        self.bD2AbsError = True
 
         # Storage
         self.metrics = {}
@@ -66,10 +56,7 @@ class EvaMetrics:
                     l.update({"PearsonR": self.metrics[q]["Standard"]["PearsonR"]})
                     l.update({"PearsonP": self.metrics[q]["Standard"]["PearsonP"]})
                     if p == "Curve":
-                        l.update({"SpearmanRs": self.metrics[q]["Standard"]["SpearmanRs"]})
-                        l.update({"R2": self.metrics[q]["Standard"]["R2"]})
                         l.update({"MeanError": self.metrics[q]["Standard"]["MeanError"]})
-                        l.update({"VarError": self.metrics[q]["Standard"]["VarError"]})
                         l.update({"MAEmean": self.metrics[q]["ByMeanForm"]["Mean"]["MAE"]})
                         l.update({"Rmean": self.metrics[q]["ByMeanForm"]["Mean"]["PearsonR"]})
                         l.update({"MAEform": self.metrics[q]["ByMeanForm"]["Form"]["MAE"]})
@@ -81,6 +68,8 @@ class EvaMetrics:
             else:
                 d.update({"Validation": w})
         self.metrics.update({"Compact": d})
+        line = self.cvs_line()
+        print(line)
         # paras = MAE, MSE, R
         # curve ;MSE, Mae, mean,var, std, R,p, Rs, R2, MAe Mean, MAe form
 
@@ -176,19 +165,7 @@ class EvaMetrics:
             std = np.std(error, axis=None)
 
             return mean, var, std
-
-    # -------------------------------------- #
-    def calc_varstd_quotient(self, y_true, y_predict):
-        """
-        Calculates the quotient of variance_predicted to variance_true and std_predicted/std_true (of 1D or 2D data)
-        """
-        var = np.var(y_true)
-        var_pr = np.var(y_predict)
-        std_true = np.std(y_true)
-        std_pr = np.std(y_predict)
-        return var_pr / var, std_pr / std_true
-
-    # -------------------------------------- #
+ # -------------------------------------- #
     def calc_pearson(self, y_true, y_predict):
         """
         Calculates the Pearson coefficient (R-value) with t value and p value (of only 1D data)
@@ -198,63 +175,7 @@ class EvaMetrics:
             t = r / np.sqrt((1 - r ** 2) / (len(y_true) - 2))
             return r, t, p
 
-    # -------------------------------------- #
-    def calc_spearman(self, y_true, y_predict):
-        """
-        Calculates the Spearman coefficient (Rs-value)  (of only 1D data)
-        """
-        if self.bRsScore:
-            rs = spearmanr(y_true, y_predict)
-            try:
-                rs_val = rs.statistic
-            except:
-                rs_val = rs.correlation
-            return rs_val
 
-    # -------------------------------------- #
-    def calc_r2(self, y_true, y_predict):
-        """
-        Calculates the R2 value (of 1D or 2D data)
-        """
-        if self.bR2Score:
-            r2 = r2_score(y_true, y_predict, multioutput="variance_weighted")
-            return r2
-
-    # -------------------------------------- #
-    def calc_explained_var_score(self, y_true, y_predict):
-        """
-        Calculates the explained variance value (of 1D or 2D data)
-        """
-        if self.bExplainedvarianceScore:
-            EVS = explained_variance_score(y_true, y_predict, multioutput="variance_weighted")
-            return EVS
-
-    # -------------------------------------- #
-    def calc_d(self, y_true, y_predict):
-        """
-        Calculates the Mean-Tweedie-deviance (of 1D only)
-        """
-        if self.bDScore:
-            d = mean_tweedie_deviance(y_true, y_predict, power=1.9)
-            return d
-
-    # -------------------------------------- #
-    def calc_d2_tweedie(self, y_true, y_predict):
-        """
-        Calculates the D2 -Tweedie score (of 1D only)
-        """
-        if self.bD2TweedleScore:
-            d2 = d2_tweedie_score(y_true, y_predict, power=1.9)
-            return d2
-
-    # -------------------------------------- #
-    def calc_d2_abserror(self, y_true, y_predict):
-        """
-        Calculates the D2-absolute error score (of 1D or 2D data)
-        """
-        if self.bD2AbsError:
-            d2 = d2_absolute_error_score(y_true, y_predict)
-            return d2
 
     # -------------------------------------- #
     def calc_metrics(self, y_true, y_predict, paratype, name, bParas=False, bSave=True, bShow=False):
@@ -268,275 +189,24 @@ class EvaMetrics:
         :param bSave: If the graphics should be saves
         :param bShow: If the graphics are shown
         """
-        print("1 Memory used " + str(process.memory_info().rss / 1024))
         d = {}
         if self.bStandardMetrics:
             b = self.run_metrics(y_true, y_predict)
             d.update({"Standard": b})
-        print("2 Memory used " + str(process.memory_info().rss / 1024))
 
         if self.byMeanForm and bParas == False:
             s = {}
             mean_true, mean_predict, form_true, form_predict = self.sort_mean_form(y_true, y_predict)
             s.update({"Mean": self.run_metrics(mean_true, mean_predict)})
             s.update({"Form": self.run_metrics(form_true, form_predict)})
-            print("2a1) Memory used " + str(process.memory_info().rss / 1024))
             s["Form"].update({"FormMAE":self.form_error_block(form_true, form_predict, 1024, errortype="Absolute")})
             s["Form"].update({"FormMSE":self.form_error_block(form_true, form_predict, 1024, errortype="Squared")})
-            print("2a) Memory used " + str(process.memory_info().rss / 1024))
             s["Form"].update({"FormMAENorm":self.form_error_block(form_true, form_predict, 1024, errortype="Absolute", bnorm=True)})
             s["Form"].update({"FormMSENorm":self.form_error_block(form_true, form_predict, 1024, errortype="Squared", bnorm=True)})
-            print("2b) Memory used " + str(process.memory_info().rss / 1024))
             d.update({"ByMeanForm": s})
 
-          #  gc.collect()
-        print("3Memory used " + str(process.memory_info().rss / 1024))
-
-        if self.byMinMax and bParas==False:
-            s = {}
-            min_true, min_predict, max_true, max_predict = self.sort_min_max(y_true, y_predict)
-            s.update({"Min": self.run_metrics(min_true, min_predict)})
-            s.update({"Max": self.run_metrics(max_true, max_predict)})
-            d.update({"ByMinMax": s})
-            if self.byMeanForm:
-                self.visu_mean_results( mean_true, mean_predict,min_true, min_predict, max_true, max_predict, name, d, bSave, bShow=bShow)
-                del mean_true, mean_predict, form_true, form_predict
-            del min_true, min_predict, max_true, max_predict
-            gc.collect()
-        print("4Memory used " + str(process.memory_info().rss / 1024))
-        if self.bByIndex:
-            s = {}
-            for i in range(len(y_true[0])):
-                b = self.run_metrics(y_true[:, i], y_predict[:, i])
-                s.update({str(i): b})
-            d.update({"ByIndex": s})
-
-        print("5Memory used " + str(process.memory_info().rss / 1024))
-        if self.bByParatype and bParas == True:
-            s = {}
-            l = self.sort_by_paratype(y_true, y_predict, paratype)
-            for t, val in l.items():
-                s.update({t: self.run_metrics(val[0], val[1])})
-            d.update({"ByParatype": s})
-
-        print("6Memory used " + str(process.memory_info().rss / 1024))
-
         self.metrics.update({name: d})
-        if self.bVisualMetrics:
-            self.visu_metrics(y_true, y_predict, name, d, bSave, bShow=bShow)
-            print("6b) Memory used " + str(process.memory_info().rss / 1024))
-            self.visu_by_index(y_true, y_predict, name, d, bSave, bShow=bShow)
-        print("7Memory used " + str(process.memory_info().rss / 1024))
 
-    # -------------------------------------- #
-    def visu_metrics(self, y_true, y_predict, name, d, bSave, bShow=False):
-        """
-        Visualize certain metrics
-        """
-        fig, axs = plt.subplots(ncols=2, figsize=(15, 11))
-        print("6a) Memory used " + str(process.memory_info().rss / 1024))
-
-        axs[0].scatter(y_true,y_predict, alpha=0.1, s=25)
-        print("6a2) Memory used " + str(process.memory_info().rss / 1024))
-
-        plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.08)
-        for axi in axs.flat:
-            for axis in ["top", "bottom", "left", "right"]:
-                axi.spines[axis].set_linewidth(2)
-        for i in range(2):
-            axs[i].set_facecolor("whitesmoke")
-
-        axs[0].set_title("Actual vs. Predicted values", fontsize=20)
-        axs[1].scatter(y_true, y_true-y_predict, alpha=0.1, s=25)
-        print("6a3) Memory used " + str(process.memory_info().rss / 1024))
-
-        axs[1].set_title("Residuals vs. Predicted Values", size=20)
-        axs[0].set_xlabel("Actual values", fontsize=20, loc="right")
-        axs[1].set_xlabel("Predicted values", fontsize=20, loc="right")
-        axs[0].set_ylabel("Predicted values", fontsize=20, loc="top")
-        axs[1].set_ylabel("Residuals (actual - predicted)", fontsize=20, loc="top")
-        fig.suptitle("Plotting predictions for " + name, size=24)
-        plt.tight_layout()
-        if bSave:
-            fig.savefig(self.fSavePath + name + "PredictionError.png")
-        if bShow:
-            plt.show()
-        gc.collect()
-
-
-    def visu_metrics2(self, ymean_true, ymean_predict, min_true, min_predict, max_true, max_predict, name, bSave, bShow=False):
-        """
-        Visualize certain metrics min max mean
-        """
-        fig, axs = plt.subplots(ncols=3, figsize=(20, 7.1))
-        limits= [np.min(min_true)-5, np.max(min_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[0].plot(line, line, color="black", linewidth=2, linestyle="--")
-
-        limits= [np.min(ymean_true)-5, np.max(ymean_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[1].plot(line, line, color="black", linewidth=2, linestyle="--")
-
-        limits= [np.min(max_true)-5, np.max(max_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[2].plot(line, line, color="black", linewidth=2, linestyle="--")
-        axs[0].scatter(min_true,min_predict, alpha=0.1, s=25, color="steelblue")
-
-        plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.08)
-        for axi in axs.flat:
-            for axis in ["top", "bottom", "left", "right"]:
-                axi.spines[axis].set_linewidth(2)
-        for i in range(3):
-            axs[i].set_facecolor("whitesmoke")
-
-      #  fig.suptitle("Actual vs.Predicted values", fonsize=20)
-        axs[0].set_title("Minima", fontsize=20)
-        axs[1].scatter(ymean_true,ymean_predict, alpha=0.1, s=25, color="steelblue")
-        axs[2].scatter(max_true,max_predict, alpha=0.1, s=25 ,color="steelblue")
-        axs[1].set_title("Mean", size=20)
-        axs[2].set_title("Maxima", size=20)
-        for i in range(3):
-            axs[i].set_xlabel("Actual values", fontsize=20, loc="right")
-            axs[i].set_ylabel("Predicted values", fontsize=20, loc="top")
-        #axs[1].set_ylabel("Residuals (actual - predicted)", fontsize=20, loc="top")
-        fig.suptitle("Plotting predictions for " + name, size=24)
-        plt.tight_layout()
-        if bSave:
-            fig.savefig(self.fSavePath + name + "PredictionErrorMinMaxMean.png")
-        if bShow:
-            plt.show()
-        gc.collect()
-
-    def visu_metrics_paper(self, ymean_true, ymean_predict, min_true, min_predict, max_true, max_predict, name, bSave, bShow=False):
-        """
-        Visualize certain metrics min max mean
-        """
-        plt.rcParams["font.family"] = "Times New Roman"
-        fig, axs = plt.subplots(ncols=3, figsize=(20, 7.1))
-        axs[0].scatter(min_true,min_predict, alpha=0.1, s=25, color="steelblue")
-
-        plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.08)
-        for axi in axs.flat:
-            for axis in ["top", "bottom", "left", "right"]:
-                axi.spines[axis].set_linewidth(2)
-        for i in range(3):
-            axs[i].set_facecolor("whitesmoke")
-
-        limits= [np.min(min_true)-5, np.max(min_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[0].plot(line, line, color="black", linewidth=2, linestyle="--")
-
-        limits= [np.min(ymean_true)-5, np.max(ymean_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[1].plot(line, line, color="black", linewidth=2, linestyle="--")
-
-        limits= [np.min(max_true)-5, np.max(max_true)+5]
-        line= np.arange(limits[0], limits[1], 1)
-        axs[2].plot(line, line, color="black", linewidth=2, linestyle="--")
-
-
-        #  fig.suptitle("Actual vs.Predicted values", fonsize=20)
-        axs[0].set_title("Minima", fontsize=20)
-        axs[1].scatter(ymean_true,ymean_predict, alpha=0.1, s=25, color="steelblue")
-        axs[2].scatter(max_true,max_predict, alpha=0.1, s=25, color="steelblue")
-
-        axs[1].set_title("Mean", size=20)
-        axs[2].set_title("Maxima", size=20)
-        for i in range(3):
-            axs[i].set_xlabel("Real Pressures [mm Hg]", fontsize=20, loc="right")
-            axs[i].set_ylabel("Estimated Pressures [mm Hg]", fontsize=20, loc="top")
-        # axs[1].set_ylabel("Residuals (actual - predicted)", fontsize=20, loc="top")
-    #    fig.suptitle("Plotting predictions for " + name, size=24)
-        plt.tight_layout()
-        if bSave:
-            fig.savefig(self.fSavePath + name + "PredictionErrorMinMaxMean.png")
-        if bShow:
-            plt.show()
-
-        #todo
-        plt.show()
-
-
-    def visu_by_index(self, y_true, y_predict, name, d, bSave, bShow=False):
-        if self.bByIndex:
-            mean_error = []
-            var_error = []
-            for i in range(len(y_true[0])):
-                mean_error.append(d["ByIndex"][str(i)]["MeanError"])
-                var_error.append(d["ByIndex"][str(i)]["VarError"])
-
-            x = np.arange(1, len(y_true[0]) + 1)
-            fig, ax1 = plt.subplots(figsize=(16, 10))
-            ax1.set_facecolor("whitesmoke")
-            plt.subplots_adjust(left=0.079, top=0.936, right=0.94, bottom=0.08)
-            for axis in ["top", "bottom", "left", "right"]:
-                ax1.spines[axis].set_linewidth(2)
-            plot1 = ax1.plot(x, mean_error, color="blue", linewidth=2, label="Mean Error")
-            ax1.set_xlabel("Index", fontsize=20, loc="right")
-            ax1.set_ylabel("Mean Error", fontsize=20, loc="top")
-            ax1.set_title("Mean Error and Error Variance per index", fontsize=24)
-            ax2 = ax1.twinx()
-            ax2.set_ylabel("Error Variance", fontsize=20, loc="top")
-            plot2 = ax2.plot(x, var_error, color="crimson", linewidth=2, label="Error Variance")
-            lns = plot1 + plot2
-            labels = [l.get_label() for l in lns]
-            plt.legend(lns, labels, loc=0)
-            if bSave:
-                fig.savefig(self.fSavePath + name + "MeanErrorVar.png")
-            if bShow:
-                plt.show()
-
-
-    def visu_mean_results(self, ymean_true, ymean_predict, min_true, min_predict, max_true, max_predict, name, d, bSave, bShow=False):
-        fontSize = 22
-        title_Size = 24
-
-        plt.rcParams["font.family"] = "Times New Roman"
-        plt.rc('xtick', labelsize=fontSize)
-        plt.rc('ytick', labelsize=fontSize)
-        fig, ax = plt.subplots(figsize=(17, 12))
-        # Creating plot
-        ax.set_facecolor("whitesmoke")
-        bp1 = ax.violinplot([min_true-min_predict, ymean_true-ymean_predict, max_true-max_predict], widths=0.5, showmeans=True)
-
-        # ax.legend(fontsize=fontSize)
-        ax.grid(linewidth=0.4)
-        i = 0
-        colors = ["lightblue", "steelblue", "teal"]
-        for pc in bp1["bodies"]:
-            pc.set_facecolor(colors[i])
-            #    pc.set_edgecolor("black")
-            pc.set_linewidth(3)
-            pc.set_alpha(0.7)
-            i += 1
-        bp1["cmeans"].set_color("black")
-        bp1["cmins"].set_color("black")
-        bp1["cmaxes"].set_color("black")
-        bp1["cbars"].set_color("black")
-
-        def set_axis_style(ax, labels):
-            ax.set_xticks(np.arange(1, len(labels) + 1))
-
-        ax.set_xticklabels(["Minima", "Mean", "Maxima"], fontsize=fontSize)
-        set_axis_style(ax, ["Minima", "Mean", "Maxima"])
-        ax.set_title(name + " Min Max Mean from Aortic Pressure Curve Estimation", size=title_Size)
-        ax.set_ylabel("Error [mm Hg]", size=fontSize, loc="top")
-        # ax.set_xlabel("Extracted parameters ", size=fontSize, loc="right")
-
-        plt.subplots_adjust(left=0.079, top=0.936, right=0.957, bottom=0.1)
-        for axis in ["top", "bottom", "left", "right"]:
-            ax.spines[axis].set_linewidth(2)
-
-        if bSave:
-            fig.savefig(self.fSavePath + name + "Error_of_mean_min_max.png")
-        if bShow:
-           plt.show()
-        #todo
-        plt.show()
-
-        self.visu_metrics_paper(ymean_true, ymean_predict, min_true, min_predict, max_true, max_predict,name+" Paper", bSave, bShow=bShow)
-        self.visu_metrics2(ymean_true, ymean_predict, min_true, min_predict, max_true, max_predict,name+" of Min,Mean and Max", bSave, bShow=bShow)
-        self.visu_metrics(ymean_true, ymean_predict, name+" of the Mean ", d, bSave, bShow=bShow)
 
 
     # -------------------------------------- #
@@ -552,35 +222,12 @@ class EvaMetrics:
         di.update({"MeanError": m})
         di.update({"VarError": v})
         di.update({"StdError": s})
-        vq, sq = self.calc_varstd_quotient(y_true, y_predict)
-        di.update({"VarQ": vq})
-        di.update({"StdQ": sq})
         r, t, p = self.calc_pearson(y_true.flatten(), y_predict.flatten())
         di.update({"PearsonR": r})
         di.update({"PearsonT": t})
         di.update({"PearsonP": p})
-        di.update({"SpearmanRs": self.calc_spearman(y_true.flatten(), y_predict.flatten())})
-        di.update({"R2": self.calc_r2(y_true, y_predict)})
-        di.update({"EVS": self.calc_explained_var_score(y_true, y_predict)})
-        #    di.update({"D": self.calc_d(y_true.flatten(), y_predict.flatten())})
-        #  di.update({"D2Tweedie": self.calc_d2_tweedie(y_true.flatten(), y_predict.flatten())})
-        di.update({"D2AE": self.calc_d2_abserror(y_true, y_predict)})
         return di
 
-    # -------------------------------------- #
-    def sort_by_paratype(self, y_true, ypredict, paratype):
-        """
-        Internal function to sort the values by parameter type (amplitudes, positions, means, standard_deviations...)
-        """
-        l = len(y_true[0])
-        if paratype == "Linear":
-            k = np.arange(0, l, 2)
-            y1_true = y_true[:, k]
-            y1_predict = ypredict[:, k]
-            k = k + 1
-            y2_true = y_true[:, k]
-            y2_predict = ypredict[:, k]
-            return {"Position": [y1_true, y1_predict], "Amplitude": [y2_true, y2_predict]}
 
     # -------------------------------------- #
     def sort_mean_form(self, y_true, y_predict):
@@ -598,18 +245,6 @@ class EvaMetrics:
             form_predict[:, k] = form_predict[:, k] - mean_predict
         return mean_true, mean_predict, form_true, form_predict
 
-
-    # -------------------------------------- #
-    def sort_min_max(self, y_true, y_predict):
-        """
-        Calc min and ax of each curve
-        :return: True mean values, Predicted mean values, true shape vectors, estimated shape vectors
-        """
-        min_true = np.min(y_true, axis=1)
-        min_predict = np.min(y_predict, axis=1)
-        max_true = np.max(y_true, axis=1)
-        max_predict = np.max(y_predict, axis=1)
-        return min_true, min_predict, max_true, max_predict
 
     # -------------------------------------- #
     def create_basic_curve(self, l=1024, height=40):
