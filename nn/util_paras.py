@@ -36,106 +36,7 @@ def quality_checks(X: list, y: list, eit_length=128, aorta_length=1024):
     return idx
 
 
-# ------------------------------------------------------------------------------------------------------------------- #
-def normalize_aorta(y: np.ndarray, norm_aorta:str ,  invert=False, facgiven=0, deduction=0):
-    """New normalization of aortic paras
 
-    invert:  Denormalize if True"""
-    if facgiven ==0 or (facgiven==1 and deduction==0):
-
-        if norm_aorta == "positive1024":
-            deduction = 0
-            factor = 1024
-        elif norm_aorta == "bipolar":
-            deduction = 0
-            factor = np.max(np.abs(y), axis=None)
-        elif norm_aorta == "bipolar1200":
-            deduction = 0
-            factor = np.max(np.abs(y), axis=None)
-            if factor > 1200:
-                factor = 1200
-
-        elif norm_aorta == "standard":
-            deduction = np.mean(y,axis=None)
-            factor = np.std(y,axis=None)
-
-        elif norm_aorta =="formnorm":
-            if not invert:
-                y = form_norm_aorta_paras(y)
-            else:
-                y = make_pos_to1(y,bInvert=invert)
-            deduction = 0
-            factor=1
-
-        elif norm_aorta == "normtoone":
-            y =make_pos_to1(y, bInvert=invert)
-            y,factor,deduction = norm_amplitudes(y, bInvert=invert, factor=facgiven, deduction=deduction)
-
-        elif norm_aorta == "normPos":
-            y = make_pos_to1(y, bInvert=invert)
-            factor= 1
-            deduction=0
-
-        else:    # ===positive
-            deduction = np.min(y,axis=None)
-            factor = np.max(y,axis=None) - deduction
-    elif norm_aorta == "normtoone":
-        y = make_pos_to1(y, bInvert=invert)
-        y, factor, deduction = norm_amplitudes(y, bInvert=invert, factor=facgiven, deduction=deduction)
-    elif norm_aorta == "normPos":
-        y = make_pos_to1(y, bInvert=invert)
-        factor = 1
-        deduction = 0
-    else:
-        factor = facgiven
-    if norm_aorta != "normtoone" and norm_aorta != "normPos":
-        if invert:
-            y = y * factor + deduction
-        else:
-            y = (y - deduction) / factor
-    return y, deduction, factor
-
-
-
-#todo check if correct
-def form_norm_aorta_paras(y):
-    pos_index = np.arange(0, y.shape[1], 2)
-    form_index = pos_index+1
-    L = y[0][-2]
-    y[:, pos_index] = y[:, pos_index]/L
-    MaxVal = np.max(y[:, form_index], axis=1)
-    MinVal = np.min(y[:, form_index], axis=1)
-    Factor = np.max(y[:, form_index], axis=1) -MinVal
-    y[:, form_index] = (y[:, form_index] -MinVal[:, np.newaxis ])/ Factor[:, np.newaxis]
-    return y
-
-
-
-def make_pos_to1(y, bInvert=False):
-    pos_index = np.arange(0, y.shape[1], 2)
-
-    if not bInvert:
-        L = y[0][-2]
-        y[:, pos_index] = y[:, pos_index]/L
-    else:
-        L = 1023
-        y[:, pos_index] = y[:, pos_index] * L
-    return y
-
-
-
-def norm_amplitudes(y, bInvert=False, factor=1, deduction=0):
-    form_index= np.arange(0, y.shape[1], 2)+1
-    if not bInvert:
-        if deduction == 0 or factor==0:
-            amount= y[:, form_index]
-            amount= amount [amount!= 0]
-            deduction = np.min(amount)
-            factor = np.max(y[:, form_index]) -deduction
-        y[:, form_index] = (y[:, form_index]-deduction) / factor
-    else:
-        y[:, form_index] = y[:, form_index] *factor+deduction
-    return y, factor, deduction
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -176,51 +77,6 @@ def normalize_eit(X: np.ndarray, pigs: np.ndarray, norm_eit: str):
                 sx = np.std(X[idx, :, :], axis=(0, 1))
                 X[idx, :, :] = (X[idx, :, :] - mx) / sx
 
-    elif norm_eit == 'block1024':
-        le_p = LabelEncoder()
-        le_b = LabelEncoder()
-        le_p.fit(pigs[:, 0])
-
-        for p in le_p.classes_:
-            idx_p = np.where(pigs[:, 0] == p)
-            le_b.fit(np.squeeze(pigs[idx_p, 1]))
-            for b in le_b.classes_:
-                idx = np.where((pigs[:, 0] == p) & (pigs[:, 1] == b))
-                mx = np.mean(X[idx, :, :], axis=(0, 1,2))
-                sx = np.std(X[idx, :, :], axis=(0, 1,2))
-                X[idx, :, :] = (X[idx, :, :] - mx) / sx
-
-    elif norm_eit == 'minmaxblock1024':
-        le_p = LabelEncoder()
-        le_b = LabelEncoder()
-        le_p.fit(pigs[:, 0])
-
-        for p in le_p.classes_:
-            idx_p = np.where(pigs[:, 0] == p)
-            le_b.fit(np.squeeze(pigs[idx_p, 1]))
-            for b in le_b.classes_:
-                idx = np.where((pigs[:, 0] == p) & (pigs[:, 1] == b))
-                mx = np.min(X[idx, :, :], axis=(0, 1,2))
-                maxi = np.max(X[idx, :, :], axis=(0, 1,2))
-                X[idx, :, :] = (X[idx, :, :] - mx) / (maxi-mx)
-
-
-
-    elif norm_eit == 'block1024M':
-        s = 1000000     # Scale factor
-        le_p = LabelEncoder()
-        le_b = LabelEncoder()
-        le_p.fit(pigs[:, 0])
-
-        for p in le_p.classes_:
-            idx_p = np.where(pigs[:, 0] == p)
-            le_b.fit(np.squeeze(pigs[idx_p, 1]))
-            for b in le_b.classes_:
-                idx = np.where((pigs[:, 0] == p) & (pigs[:, 1] == b))
-                mx = np.mean(X[idx, :, :], axis=(0, 1,2))
-                X[idx, :, :] = (X[idx, :, :] - mx)/s
-
-
     return X
 
 
@@ -237,9 +93,6 @@ def load_paras(X: list, y: list, pigs: list, path: str, para_len: int):
     files = list(sorted(files))
     if len(files) == 0:
         raise Exception("No npz files found in directory")
-
-    # todo RAUS
- #   files = files[:1500]
 
     for filepath in files:
         tmp = np.load(filepath)
@@ -272,8 +125,6 @@ def load_vent_signal(vsig,  path: str,venttype):
     if len(files) == 0:
         raise Exception("No npz files found in directory")
 
-    # todo RAUS
-    files = files[0:1500]
     if venttype=="middle":
         for filepath in files:
             tmp = np.load(filepath)
@@ -354,13 +205,9 @@ def load_preprocess_paras(
         norm_eit="none",
         resample_paras=False,
         sUseIndex="none",
-        bWeighting=False,
-        bHP_EIT=False,
-        bLP_EIT=False,
         useReziprok="none",
         loadVent="none",
         reorder_mea= False,
-        newShape=False,
         getLengthSig=False,
         iLeaveOut=1
 ):
@@ -369,8 +216,6 @@ def load_preprocess_paras(
     :return: X = EIT data [num segments x eit_length=64 x 1024(or number indices) x 1], y=aorta data parameters [numsegments x para_len]
              pig = Pig info [numsegments x 6] with [Pig, block, index, len, study..]
     """
-    #todo HP eit
-    # initialize data lists
     X = list()
     y = list()
     pigs = list()
@@ -386,18 +231,6 @@ def load_preprocess_paras(
         y = y[::iLeaveOut]
         pigs= pigs[::iLeaveOut]
 
-    print(len(X))
-    print(X[0].shape)
-    max_len_eit = 0
-    min_len_eit = 1000
-    for j in range(len(X)):
-        w = len(X[j])
-        if w > max_len_eit:
-            max_len_eit = w
-        if w < min_len_eit:
-            min_len_eit = w
-    print("Min length of EIT segments " + str(min_len_eit))
-    print("Max length of EIT segments " + str(max_len_eit))
 
     # if requested return raw data
     if raw:
@@ -420,28 +253,10 @@ def load_preprocess_paras(
         vsig = np.array(vsig)
         vsig = vsig[:,  np.newaxis]
 
-        #only in combi with vsig
-        if getLengthSig:
-            lsig = np.array(get_segment_length(X))
-            lsig = lsig[:, np.newaxis]
-            vsig= np.append(vsig, lsig, axis=1)
-            print(vsig.shape)
+
 
     # create index for shuffling
     N = len(y)
-
-    # Use the reziprok channels by
-    #  useReziprok= "none"
-    if useReziprok == "average":
-        X = average_reziprok_channels(X)
-        sUseIndex="NonReziprok"
-    elif useReziprok=="merge":
-        # FOR MERGING THE EIT_LENGTH HAS TO BE DOUBLED FROM THE CONFIG FILE; BECAUSE THE SEGMENT LENGTH IS DOUBLED
-        X = merge_reziprok_chas(X)
-        sUseIndex="none"
-
-
-
 
     X = resample_eit(X, eit_length)
 
@@ -459,38 +274,21 @@ def load_preprocess_paras(
     if shuffle:
         shuffle= np.arange(N)
         np.random.shuffle(shuffle)
-       # shuffle = np.random.randint(N, size=N)
     else:
         shuffle = range(N)
-
-    if sUseIndex != "none":
-        X = use_indices(sUseIndex, X)
-
-    if reorder_mea:
-        X = reorder_meaindex(X)
 
     # if requested normalize EIT signals
     if norm_eit != 'none':
         X = normalize_eit(X, np.array(pigs), norm_eit)
 
-
-
     X = X[:, :, :, np.newaxis]
 
     if resample_paras:
-        # only for lin paras
         y = resample_paras_aorta(y, aorta_length)
-
 
     # pre-process aorta signals not possible due to parameters
     y = np.array(y)
-
-   # if norm_aorta != 'none':
-      #  normalize_aorta(y, norm_aorta)
     pigs = np.array(pigs)
-    # if requested normalize aorta signals
-    #  if norm_aorta:
-    #     y = normalize_aorta(y)
     if loadVent != "none":
         return X[shuffle, ...], y[shuffle, ...],vsig[shuffle, ...], pigs[shuffle, ...]
 
@@ -683,217 +481,3 @@ def write_configs(f, testpig, epochs, batch, lr, fac, latent_dim, kernel, f1, f2
     f.write("Reorder Mea: " + str(reordermea) + "\n")
     f.write("bMoreDense: " + str(bMoreDense) + "\n")
 
-
-
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-# Index functions functions
-# ------------------------------------------------------------------------------------------------------------------- #
-# ------------------------------------------------------------------------------------------------------------------- #
-def use_indices(type, X):
-    """
-    Use only certain of the 1024 EIT channels
-    :param type: Describes the type, after which is decided which indices to use
-    :param X: EIT input data [segments x time per segment x 1024]
-    :return: X = EIT with reduced indices [segments x time per segment x numIndices <1024]
-    """
-    print(type)
-    ind = get_indices(type)
-    if ind.any() != None:
-        X = X[:, :, ind]
-    return X
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def get_indices(type):
-    """
-    Gets index numbers to use for EIT data
-    :param type: Which selection of indices should happen
-    :return: The indices to use (python counting style beginning with zero)
-    """
-    if type == "FirstHalf":
-        ind = np.arange(0, 512)
-    elif type == "NonReziprok":
-        ind = calc_non_reziprok_ind(32)
-    elif type == "AortaIndex":
-        ind = load_index("nn/indices/aorta_index.json", "aorta_index")
-    elif type == "AortaIndexGuard":
-        ind = load_index("nn/indices/aorta_index.json", "aorta_index_guard")
-    elif type == "CrossIndex":
-        ind = load_index("nn/indices/crosscorr_index.json", "above70")
-    elif type == "CrossIndexGuard":
-        ind = load_index("nn/indices/crosscorr_index.json", "above60")
-    elif type == "FreqIndex":
-        ind = load_index("nn/indices/freq_index.json", "FreqIndex")
-    elif type == "AutocorrIndex":
-        ind = load_index("nn/indices/autocorr_index.json", "under600")
-    elif type == "AutocorrIndexGuard":
-        ind = load_index("nn/indices/autocorr_index.json", "under800")
-    elif type == "NonInjection":
-        ind2, ind = calc_non_injection_ind()
-    elif type == "NonInjectionGuard":
-        ind, ind2 = calc_non_injection_ind()
-    elif type == "NonInjectionMid":
-        ind = calc_non_injection_ind_single("mid")
-    elif type == "NonInjectionLeft":
-        ind = calc_non_injection_ind_single("left")
-    elif type == "NonInjectionRight":
-        ind = calc_non_injection_ind_single("right")
-    elif type == "NonInjectionLeftRight":
-        ind = calc_non_injection_ind_single("right")
-        ind2 = calc_non_injection_ind_single("left")
-        ind = np.array(list(set(ind) & set(ind2)))
-    elif type == "NonInjectionMidRight":
-        ind = calc_non_injection_ind_single("right")
-        ind2 = calc_non_injection_ind_single("mid")
-        ind = np.array(list(set(ind) & set(ind2)))
-    elif type == "NonInjectionMidLeft":
-        ind = calc_non_injection_ind_single("mid")
-        ind2 = calc_non_injection_ind_single("left")
-        ind = np.array(list(set(ind) & set(ind2)))
-
-    elif type == "VisualIndex":
-        ind = load_index("nn/indices/visual_index.json", "EITindex")
-    elif type == "VisualIndexGuard":
-        ind = load_index("nn/indices/visual_index.json", "EITindexguard")
-    elif type == "NNbasedIndex":
-        ind = load_index("nn/indices/cha_selection.json", "NNbasedIndex")
-    elif type == "SingleBolusIndex":
-        ind = load_index("nn/indices/cha_selection.json", "BolusP07Index")
-    elif type == "BolusIndex":
-        ind = load_index("nn/indices/cha_selection.json", "BolusCombiIndex")
-    elif type == "NNbasedIndex03":
-        ind = load_index("nn/indices/cha_selection03.json", "NNbasedIndex")
-    elif type == "SingleBolusIndex03":
-        ind = load_index("nn/indices/cha_selection03.json", "BolusP07Index")
-    elif type == "BolusIndex03":
-        ind = load_index("nn/indices/cha_selection03.json", "BolusCombiIndex")
-    elif type == "NNbasedIndexFreq":
-        ind = load_index("nn/indices/cha_selection_revised.json", "NNbasedIndexFreq")
-    elif type == "NNbasedIndexCross":
-        ind = load_index("nn/indices/cha_selection_revised.json", "NNbasedIndexCross")
-    elif type == "NNbasedIndexVisu":
-        ind = load_index("nn/indices/cha_selection_revised.json", "NNbasedIndexVisu")
-    else:
-        ind = np.array([None])
-    return ind
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def calc_non_reziprok_ind(n, bKeepInj=True):
-    """
-    Calc indices for only non-reziprok channels
-    :param n: number of electrodes
-    :return: array with indices
-    """
-    l = []
-    if bKeepInj:
-        start = 0
-    else:
-        start = 1
-    for i in range(32):
-        for k in range(start, n):
-            number = int(i * 32 + k)
-            l.append(number)
-        start += 1
-    l = np.array(l)
-    return l
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def calc_non_injection_ind():
-    """
-    Calc indices for only measurement=non-injeciton channels
-    :return: array with indices, and array with guard indices
-    """
-    injection_ind = []
-    injection_ind_guard = []
-    for i in range(32):
-        offset = i * 32
-        for k in [i, i + 5, i - 5]:
-            if k < 0:
-                k += 32
-            elif k > 31:
-                k -= 32
-            injection_ind.append(offset + k)
-            injection_ind_guard.append((offset + k))
-        for k in [i - 1, i + 1, i + 6, i + 4, i - 6, i - 4]:
-            if k < 0:
-                k += 32
-            elif k > 31:
-                k -= 32
-            injection_ind_guard.append((offset + k))
-
-    injection_ind = sorted(injection_ind, reverse=True)
-    injection_ind_guard = sorted(injection_ind_guard, reverse=True)
-    inj_ind = list(np.arange(0, 1024))
-    inj_ind_guard = list(np.arange(0, 1024))
-    for j in injection_ind:
-        del inj_ind[j]
-    for j in injection_ind_guard:
-        del inj_ind_guard[j]
-
-    return np.array(inj_ind), np.array(inj_ind_guard)
-# ------------------------------------------------------------------------------------------------------------------- #
-def calc_non_injection_ind_single(type="mid"):
-    """
-    Calc indices for only measurement=non-injeciton channels
-    :return: array with indices, and array with guard indices
-    """
-    def get_i(i, type):
-        if type=="mid":
-            return i
-        elif type=="left":
-            return i-5
-        else:
-            return i+5
-    injection_ind = []
-    for i in range(32):
-        offset = i * 32
-        k = get_i(i, type)
-        if k < 0:
-            k += 32
-        elif k > 31:
-            k -= 32
-        injection_ind.append(offset + k)
-    injection_ind = sorted(injection_ind, reverse=True)
-    inj_ind = list(np.arange(0, 1024))
-    for j in injection_ind:
-        del inj_ind[j]
-
-    return np.array(inj_ind)
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def load_index(path, name):
-    """
-    Load a file with stored EIT indices
-    :param path: path to loaf
-    :param name: FIle name
-    :return: Array of indices
-    """
-    try:
-        with open(path, "r") as file:
-            config = json.load(file)
-        return np.array(config[name])
-    except:
-        return np.array([None])
-
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def reorder_meaindex(X):
-    """
-    Perform weighting to the input matrix
-    :param X: Input data EIT matrix [num time x 1024]
-    :param weight_vec: Weight vector [1024]
-    :return: Weighted matrix X
-    """
-    new_Idx = np.zeros(1024, dtype=int)
-    idx = 0
-    for j in range(32):
-        for i in range(32):
-            new_Idx[idx] = i*32+j
-            idx+=1
-    X = X[:, :, new_Idx]
-    return X
