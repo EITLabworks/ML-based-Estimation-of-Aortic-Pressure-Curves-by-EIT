@@ -275,7 +275,7 @@ y_valid_recon = recon_paras_block(y_valid, sParaType, bScale=False, Denorm=sNorm
 y_valid_preds_recon = recon_paras_block(y_valid_preds, sParaType, bScale=False, Denorm=sNormAorta)
 
 
-y_valid_recon1 = np.array(recon_paras_block(y_valid, sParaType+"Curve", bScale=bScale, Denorm=sNormAorta,normcoeffs= [facNorm, deduction]))
+y_valid_recon1 = np.array(recon_paras_block(y_valid, sParaType+"Curve", bScale=False, Denorm=sNormAorta,normcoeffs= [facNorm, deduction]))
 y_valid_preds_recon1 = np.array(recon_paras_block(y_valid_preds, sParaType+"Curve", bScale=bScale, Denorm=sNormAorta,normcoeffs= [facNorm, deduction]))
 
 del y_valid, y_valid_preds

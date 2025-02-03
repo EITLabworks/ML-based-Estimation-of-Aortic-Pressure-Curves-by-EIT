@@ -57,18 +57,3 @@ class AortaNormalizer:
 
     def reset_normalizer(self, L):
         self._make_standard_vector(L)
-
-
-
-class AortaParameterHandler:
-    def __init__(self, paratype="Linear", mode="fixed", factor=1, deduction=0):
-        self.sParatype = paratype
-        self.sMode = mode
-
-
-    def work_forward(self):
-        pass
-       # resampling, reordering, quality checks, Aortanorm
-
-    def work_inverse(self):
-        pass

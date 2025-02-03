@@ -533,100 +533,24 @@ def cl_time(t, ak, dk, sigma, tk):
 
 # ------------------------------------------------------------- #
 ramp = lambda u: np.maximum(u, 0)
-def weibull(t, lam, k, amp, tk):
-    t_new = t - tk
-    t_new = ramp(t_new)
-    res = k / lam * ((t_new) / lam) ** (k - 1) * np.exp(-((t_new) / lam) ** k)
-    res = res * amp
-    return res
 
 
 
-# ------------------------------------------------------------------------------------------------------------------- #
-def rescalingfactors_for_cl(para_len:int, aorta_len=1024):
-    """
-    Veraltete Beschriftung
-    Pad an array to target len
-    :param some_array: Array to be padded [individual length]
-    :param target_len: Target  length
-    :return: some_array [target_len]
-    """
-    s = [1,1,1,1/10,1/1000,1,1,1/10,1/1000,1,1,1/10,1/1000,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,
-         1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1,1,1/100,1/100,1]
-    if para_len == 16:
-        s = s + [1, 1/100, 1/100, 1, 1, 1/100, 1/100, 1]
-  #  s=np.ones(58)
-    return np.array(s)
 
 
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def rescale_paras(ydata, factors, bReverse=False):
-    if not bReverse:
-        return np.multiply(ydata, factors)
+def split_y(Y, curvelen=7, bLeaveLen=True):
+    # Y=[numsamples, lenparas]
+    if bLeaveLen:
+        Ycurve = Y[:, 1:curvelen]
     else:
-        return np.divide(ydata, factors)
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def rescalingfactors_for_polylin(scaleFactor=100, aorta_len=1024):
-    """
-    Veraltete Beschriftung
-    Pad an array to target len
-    :param some_array: Array to be padded [individual length]
-    :param target_len: Target  length
-    :return: some_array [target_len]
-    """
-    s = np.ones(39)
-    offset = 8
-    k = 16
-    for i in range(k):
-        s[offset+i*2] *= scaleFactor
-    return s
+        Ycurve = Y[:, :curvelen]
+    Yerror = Y[:, curvelen:]
+    return Ycurve, Yerror
 
 
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def reorder_aorta_paras(v, l, paratype="Linear", bReverse=False):
-    order = np.zeros(l, dtype=int)
-    if paratype == "Linear":
-        if not bReverse:
-            for i in range(l//2):
-                order[i] = int(i*2)
-                order[l//2+i] = int(i*2+1)
-        else:
-               for i in range(0,l,2) :
-                   order[i] = i//2
-                   order[i+1] = l//2+i//2
-
-    elif paratype == "PolyHierarchical":
-        for i in range(7):
-            order[i] = int(i)
-        offset = 7
-        if not bReverse:
-            for i in range(18):
-                order[i+offset] = int(i*2+offset)
-                order[offset+18+i] = int(i*2+1+offset)
-        if bReverse:
-            for i in range(0,36,2):
-                order[i+offset] = i//2+offset
-                order[offset+1+i] = 18+offset+i//2
-
-    elif paratype == "CauchyLorentz":
-        order[0] = 0
-        order[1] = 1
-        offset = 2
-        if not bReverse:
-            for i in range(14):
-                order[i+offset] = int(i*4+offset)
-                order[offset+14+i] = int(i*4+1+offset)
-                order[offset+28+i] = int(i*4+2+offset)
-                order[offset+42+i] = int(i*4+3+offset)
-        if bReverse:
-            for i in range(0,56,4):
-                order[i+offset] = i//2+offset
-                order[offset+1+i] = 14+offset+i//2
-                order[offset+2+i] = 28+offset+i//2
-                order[offset+3+i] = 42+offset+i//2
-
-    return v[:, order]
+def append_y(ycurve, yresidual, bAddLength=True, iLen=1024):
+    y = np.append(ycurve, yresidual, axis=1)
+    if bAddLength:
+        L = np.ones((len(ycurve), 1)) * iLen
+        y = np.append(L, y, axis=1)
+    return y
