@@ -2,11 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import h5py
-from nn.util_paras import resample_eit, resample_aorta, highpass_eit, lowpass_eit, normalize_eit
-from channelchart.data_preproc import create_timestamps
+from nn.util_paras import resample_eit, resample_aorta, normalize_eit
 from parametrization.save_paras import load_stored_pigmat
 from sklearn.preprocessing import LabelEncoder
-
 
 # ------------------------------------------------------------------------------------------------------------------- #
 # Loading of data --------------------------------------------------------------------------------------------------- #
@@ -194,20 +192,13 @@ def use_eit_offsets(fSeg, pnum, b, eit_seg, eit_index):
 
     return False, eit_seg
 
-def load_block(p, block, f, fseg, bLP= False, bHP=False, nameLoading="Aorta"):
+def load_block(p, block, f, fseg, nameLoading="Aorta"):
     aorta, fs_ecg = load_data(f, p, block, nameLoading)
     aorta = aorta.flatten()
     eit_data, fs_eit = load_data(f, p, block, "EIT_Voltages")
-    if bHP:
-        eit_data= highpass_eit([eit_data], f)
-        eit_data = eit_data[0]
-    if bLP:
-        eit_data = lowpass_eit([eit_data], f)
-        eit_data = eit_data[0]
-    print(len(eit_data))
 
     if aorta.any() == None:
-        print("\n" + p + str(" fail ") + block)
+        print("\n" + p + " - " + block + str(" failed."))
         return np.array([None]), None, np.array([None]), None, None, None, None, None, None, None
     else:
         print("\nStarting " + p + " - " + block)
@@ -225,14 +216,33 @@ def load_block(p, block, f, fseg, bLP= False, bHP=False, nameLoading="Aorta"):
     if eit_index.any() == None:
         return np.array([None]), None, np.array([None]), None, None, None, None, None, None, None
 
-    print("With eit offset")
-    bdelete, eit_seg = use_eit_offsets(fseg, p, block, eit_seg, eit_index)
-
-
     keep_eit, keep_aorta = compare_sort(aorta_index_eit, aorta_index)
     eit_index, eit_seg, eit_len, Nseg_eit, aorta_index, aorta_segs, aorta_len, Nseg_aorta = update_eit_and_aorta(
         keep_eit, keep_aorta, eit_index, eit_seg, eit_len, Nseg_eit, aorta_index, aorta_segs, aorta_len, Nseg_aorta)
     return eit_data, aorta, eit_index, eit_seg, eit_len, Nseg_eit, aorta_index, aorta_segs, aorta_len, Nseg_aorta
+
+
+def load_block_no_eit(p, block, f, fseg, nameLoading="Aorta"):
+    aorta, fs_ecg = load_data(f, p, block, nameLoading)
+    aorta = aorta.flatten()
+
+    if aorta.any() == None:
+        print("\n" + p + " - " + block + str(" failed."))
+        return np.array([None]), None, np.array([None]), None, None, None, None, None, None, None
+    else:
+        print("\nStarting " + p + " - " + block)
+
+    if p == "P09" and block == "09":
+        return np.array([None]), None, np.array([None]), None, None, None, None, None, None, None
+        # Block segmentation: Load segmentation indices or own segmentation
+
+    # Load segmentation for Aorta
+    aorta_index, aorta_segs, aorta_len, Nseg_aorta = segment_with_index(f, fseg, aorta, p, block, True, True)
+    if aorta_index.any() == None:
+        return np.array([None]), np.array([None]), None, np.array([None]), None
+    return  aorta, aorta_index, aorta_segs, aorta_len, Nseg_aorta
+
+
 
 
 
@@ -858,31 +868,3 @@ def mark_outliners(Nsegments, segs, widths):
     plt.show()
 
 
-# ------------------------------------------------------------- #
-def split_ecg_like_aorta(minPositions, ecg):
-    ecg_segments = []
-    for j in range(1, len(minPositions)):
-        ecg_segments.append(ecg[minPositions[j - 1]: minPositions[j]])
-
-
-# ------------------------------------------------------------- #
-class ErrorMeasure:
-    def __init__(self, limit):
-        self.limit = limit
-
-    def mae_vector(self, original, reconst):
-        v = np.abs(original - reconst)
-        return np.sum(v)
-
-    def mse_vector(self, original, reconst):
-        v = (np.abs(original - reconst)) ** 2
-        return np.sum(v)
-
-    def diff_min_max(self, original, reconst):
-        min_diff = np.abs(np.min(original) - np.min(reconst))
-        max_diff = np.abs(np.max(original) - np.max(reconst))
-        return min_diff, max_diff
-
-    def calc_error(self, original, reconst):
-        return self.mae_vector(original, reconst), self.mse_vector(original, reconst), self.diff_min_max(original,
-                                                                                                         reconst)

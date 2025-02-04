@@ -23,26 +23,23 @@ import os
 import time
 from contextlib import redirect_stdout
 import pickle
-process=psutil.Process()
-
+process = psutil.Process()
 
 
 # Loading config ------------------------------------------------------------------------------------------ #
-config_path= "C:/Users\pfuchs\Documents/uni-rostock/python_projects\EIT/nn/configs"
 data_path = "C:/Users\pfuchs\Documents/Data/EIT/PulHypStudie/DataOriginal/"
-segmentfiles= "C:/Users\pfuchs\Documents/Data/Segmentierung_Heartbeats\PulHyp_Segs_neu3_withVv73\Segmentation_2024-06-04/"
 mprefix = 'C:/Users/pfuchs\Documents/uni-rostock/python_projects\EIT/nn/models/'
 data_prefix = "C:/Users\\pfuchs\\Documents/Data/Data_npz/PulHyp_k20_20_EITbased1128/Data_Linear/"
 
-training_examples= [ "P01_PulHyp", "P02_PulHyp", "P03_PulHyp", "P04_PulHyp", "P05_PulHyp", "P06_PulHyp", "P07_PulHyp",
+training_examples = [ "P01_PulHyp", "P02_PulHyp", "P03_PulHyp", "P04_PulHyp", "P05_PulHyp", "P06_PulHyp", "P07_PulHyp",
                      "P08_PulHyp", "P09_PulHyp", "P10_PulHyp"]
 
 # Parsing of arguments ------------------------------------------------------------------------------------------ #
-iEpochs=150
-bResampleParas=True
+iEpochs = 150
+bResampleParas = True
 
 bSaveModel = True
-sNormAorta= "fixed"
+sNormAorta = "fixed"
 iBatchsize = 32
 sParaType = "Linear"
 iNumParas = 42
@@ -76,7 +73,7 @@ X, y, vsig, clrs_pig = load_preprocess_paras(
     loadVent=venttype
 )
 if sNormAorta == "fixed":
-    AortaNorm= AortaNormalizer(paratype=sParaType, mode=sNormAorta)
+    AortaNorm = AortaNormalizer(paratype=sParaType, mode=sNormAorta)
     y = AortaNorm.normalize_forward(y)
 print("Finished loading data.")
 
@@ -134,7 +131,6 @@ model = model(input_shape=(64, eit_sample_len, 1), latent_dim=iNumParas)
 model.compile(optimizer=opt, loss="mae", metrics= ["accuracy", "mae"], )
 model.summary()
 
-
 history = model.fit(
     [X_train, vsig_train],
     y_train,
@@ -167,7 +163,6 @@ if sNormAorta == "fixed":
     y_test = AortaNorm.normalize_forward(y_test)
 
 
-
 # Testing and Validation ----------------------------------------------------------------------------- #
 y_test_preds = model(X_test)
 y_valid_preds = model(X_valid)
@@ -196,7 +191,6 @@ if bSaveModel:
 
     with open(f'{path}/history.pickle', 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
-
     model.save(f'{path}/model.keras')
 
 
@@ -212,16 +206,14 @@ y_valid_recon = recon_paras_block(y_valid, sParaType, bScale=False, Denorm=sNorm
 y_valid_preds_recon = recon_paras_block(y_valid_preds, sParaType, bScale=False, Denorm=sNormAorta)
 
 
-
-
-plot_appended_recon_curves(y_test_preds_recon[0:16], y_test_recon[:16], "Testing Reconstructed Signals", sParaType,
+plot_appended_recon_curves(y_test_preds_recon[700:712], y_test_recon[700:712], "Testing Reconstructed Signals", sParaType,
                            recon_given=True, bSave=bPlotGraphics, fSavePath=path)
 
 
 plot_parameters(y_test_preds, y_test, "Testing", bSave=bPlotGraphics, fSavePath=path)
 plot_parameters(y_valid_preds, y_valid, "Validation", bSave=bPlotGraphics, fSavePath=path)
 
-ind = [5, 25, 40, 50]
+ind = [800, 5000, 7100, 7000]
 pig_plot = []
 for k in ind:
     pig_plot.append(clrs_valid[k])
@@ -259,7 +251,6 @@ M.calc_metrics(y_valid_real, y_valid_preds_recon_a, sParaType, "ValiCurve")
 
 M.calc_metrics(y_test, y_test_preds.numpy(), sParaType, "TestParas", bParas=True)
 M.calc_metrics(y_valid, y_valid_preds.numpy(), sParaType, "ValiParas", bParas=True)
-
 M.save_metrics()
 
 print("Testing finished.")

@@ -283,8 +283,6 @@ def plot_appended_recon_curves(curves, curveoris, title, paratype, segment=np.ar
 
 
 
-
-# Von jacob
 def Pearson_correlation(Y_true,Y_pred)->list:
     """
     The Pearson correlation coefficient [1]_ measures the linear relationship
