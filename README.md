@@ -4,7 +4,7 @@ This repository contains algorithms, training routines and results for EIT based
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------------------
-__Abstract:__  
+__Abstract:__   
 Central aortic pressure is a key hemodynamic
 parameter to monitor and target in clinical practice. As this
 gold standard method is highly invasive and conventional non-
@@ -21,8 +21,8 @@ time series are considered to reduce network complexity. A
 hyperparameter tuning is conducted to optimize the network.
 Results demonstrate that the estimation of aortic pressure
 curves by a trained network is feasible even on unknown test
-data, however, random offsets are observed.
-----------------------------------------------------------------------------------------------------------------------------------------
+data, however, random offsets are observed.  
+# ----------------------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 
