@@ -2,7 +2,8 @@
 This repository contains algorithms, training routines and results for EIT based estimation of central aortic pressure (CAP) curves  
 
 
-
+----------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------
 __Abstract:__  
 Central aortic pressure is a key hemodynamic
 parameter to monitor and target in clinical practice. As this
@@ -21,8 +22,8 @@ hyperparameter tuning is conducted to optimize the network.
 Results demonstrate that the estimation of aortic pressure
 curves by a trained network is feasible even on unknown test
 data, however, random offsets are observed.
-
-
+----------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -46,7 +47,7 @@ This repository includes:
 
 
 ## Installation
-1. Clone the repository:
+Clone the repository:
 ```bash
  git clone https://github.com/EITLabworks/ML-based-Estimation-of-Aortic-Pressure-Curves-by-EIT.git
 ```
@@ -54,13 +55,13 @@ This repository includes:
 
 
 ## Evaluation Results
-1. Piecewise Linear Regression
+### Piecewise Linear Regression
 ![Examplerary CAP Curves.](nn/models/model_lin/TestingCurvesLinear.png)
 
-2. Spectral Estimation
+### Spectral Estimation
 ![Examplerary CAP Curves.](nn/models/model_specest/TestingCurvesSpecEst.png)
 
-1. Piecewise Linear Regression
+### Piecewise Linear Regression
 ![Examplerary CAP Curves.](nn/models/model_hier/TestingCurvesHierarchical.png)
 
 
