@@ -1,9 +1,9 @@
 # Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography
 This repository contains algorithms, training routines and results for EIT based estimation of central aortic pressure (CAP) curves
-\\
+\
 
 
-__Abstract:__\\
+__Abstract:__\
 Central aortic pressure is a key hemodynamic
 parameter to monitor and target in clinical practice. As this
 gold standard method is highly invasive and conventional non-
@@ -22,8 +22,7 @@ Results demonstrate that the estimation of aortic pressure
 curves by a trained network is feasible even on unknown test
 data, however, random offsets are observed.
 
-\\
-\\
+
 
 
 ## This repository includes:
@@ -46,7 +45,7 @@ This repository includes:
 ## Installation
 1. Clone the repository:
 ```bash
- git clone https://github.com/yourusername/yourproject.git
+ git clone https://github.com/EITLabworks/ML-based-Estimation-of-Aortic-Pressure-Curves-by-EIT.git
 ```
 
 ## Author
