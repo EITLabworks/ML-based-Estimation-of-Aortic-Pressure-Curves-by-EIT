@@ -41,6 +41,7 @@ This repository includes:
 - train_model_XX.py : To train the with Kerastuner designed CNNs for estimation and save them.
 - eval_nn_XX.ipynb: Notebooks that show the results on the test data sets for all three parameterization techniques.
 
+![Alt Text - description of the image](nn/models/model_specest/TestingCurvesSpecEst.png)
 
 ## Installation
 1. Clone the repository:
