@@ -1,25 +1,16 @@
 """
 Author: Patricia Fuchs
 """
-from numpy.random import seed
-seed(1)
-from tensorflow.random import set_seed
-set_seed(2)
 from tensorflow.keras.layers import Input, Activation, Conv2D, MaxPooling2D, Flatten, BatchNormalization, Concatenate
 from tensorflow.keras.models import Model
-from nn.util_paras import normalize_aorta
 from tensorflow.keras.optimizers import Adam
 from nn.aorta import AortaNormalizer
-from src.reconstruction import reorder_aorta_paras
 from nn.eva_metrics import EvaMetrics
 from nn.help_function_training import *
 import warnings
 import psutil
 process = psutil.Process()
 warnings.filterwarnings('ignore')
-import gc
-import math
-import psutil
 import gc
 import os
 import time
@@ -28,17 +19,14 @@ import pickle
 
 
 # Loading config ------------------------------------------------------------------------------------------ #
-config_path = "C:/Users\pfuchs\Documents/uni-rostock/python_projects\EIT/nn/configs"
 data_path = "C:/Users\pfuchs\Documents/Data/EIT/PulHypStudie/DataOriginal/"
 
-segmentfiles = "C:/Users\pfuchs\Documents/Data/Segmentierung_Heartbeats\PulHyp_Segs_neu3_withVv73\Segmentation_2024-06-04/"
 
 mprefix = 'C:/Users/pfuchs\Documents/uni-rostock/python_projects\EIT/nn/models/'
-data_prefix = "C:/Users\\pfuchs\\Documents/Data/Data_npz/PulHyp_k20_20_EITbased1128/Data_Linear/"
+data_prefix = "C:/Users/pfuchs\Documents/Data/Data_npz/PulHyp_k14_14Resampled/Data_CauchyLorentz/"
 
 training_examples= [ "P01_PulHyp", "P02_PulHyp", "P03_PulHyp", "P04_PulHyp", "P05_PulHyp", "P06_PulHyp", "P07_PulHyp",
                      "P08_PulHyp", "P09_PulHyp", "P10_PulHyp"]
-data_path = "Cv---"
 
 # Parsing of arguments ------------------------------------------------------------------------------------------ #
 bSaveModel = True
@@ -81,9 +69,10 @@ X, y, vsig, clrs_pig = load_preprocess_paras(
 )
 
 if sNormAorta == "fixed":
-    AortaNorm= AortaNormalizer(paratype=sParaType, mode=sNormAorta)
+    AortaNorm = AortaNormalizer(paratype=sParaType, mode=sNormAorta)
     y = AortaNorm.normalize_forward(y)
 print("Finished loading data.")
+
 
 # Split into train and validation set ------------------------------------------------------------- #
 X_train, X_valid, y_train, y_valid, clrs_train, clrs_valid, vsig_train, vsig_valid = train_test_split(
@@ -146,7 +135,6 @@ history = model.fit(
     batch_size=iBatchsize
 )
 print("Training finished")
-
 del X_train, y_train, vsig_train
 
 
@@ -171,8 +159,8 @@ if sNormAorta == "fixed":
 
 
 # Testing and Validation ----------------------------------------------------------------------------- #
-y_test_preds = model(X_test)
-y_valid_preds = model(X_valid)
+y_test_preds = model([X_test, vsig_test])
+y_valid_preds = model([X_valid, vsig_valid])
 
 del X_valid, X_test
 gc.collect()
@@ -204,7 +192,7 @@ if bSaveModel:
 # Visualization ----------------------------------------------------------------------------- #
 bPlotGraphics = True
 plot_history(history, "loss", bSave=bPlotGraphics, fSavePath=path)
-
+bResampleParas = True
 
 y_test_recon = recon_paras_block(y_test, sParaType, bScale=False, Denorm=sNormAorta)
 y_test_preds_recon = recon_paras_block(y_test_preds, sParaType, bScale=False, Denorm=sNormAorta)
@@ -214,7 +202,7 @@ y_valid_preds_recon = recon_paras_block(y_valid_preds, sParaType, bScale=False, 
 
 
 
-plot_appended_recon_curves(y_test_preds_recon[0:16], y_test_recon[:16], "Testing Reconstructed Signals", sParaType,
+plot_appended_recon_curves(y_test_preds_recon[700:712], y_test_recon[700:712], "Testing Reconstructed Signals", sParaType,
                            recon_given=True, bSave=bPlotGraphics, fSavePath=path)
 
 
@@ -222,7 +210,7 @@ plot_appended_recon_curves(y_test_preds_recon[0:16], y_test_recon[:16], "Testing
 plot_parameters(y_test_preds, y_test, "Testing", bSave=bPlotGraphics, fSavePath=path)
 plot_parameters(y_valid_preds, y_valid, "Validation", bSave=bPlotGraphics, fSavePath=path)
 
-ind = [5, 25, 40, 50]
+ind = [800, 5000, 7100, 7000]
 pig_plot = []
 for k in ind:
     pig_plot.append(clrs_valid[k])
