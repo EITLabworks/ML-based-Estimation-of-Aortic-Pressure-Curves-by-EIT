@@ -23,11 +23,10 @@ data_path = "C:/Users\pfuchs\Documents/Data/EIT/PulHypStudie/DataOriginal/"
 
 
 mprefix = 'C:/Users/pfuchs\Documents/uni-rostock/python_projects\EIT/nn/models/'
-data_prefix = "/home/pfuchs/Data/Data_npz/PulHyp_k14_14Resampled/Data_CauchyLorentz/"
+data_prefix = "C:/Users/pfuchs\Documents/Data/Data_npz/PulHyp_k14_14Resampled/Data_CauchyLorentz/"
 
 training_examples= [ "P01_PulHyp", "P02_PulHyp", "P03_PulHyp", "P04_PulHyp", "P05_PulHyp", "P06_PulHyp", "P07_PulHyp",
                      "P08_PulHyp", "P09_PulHyp", "P10_PulHyp"]
-
 
 # Parsing of arguments ------------------------------------------------------------------------------------------ #
 bSaveModel = True
@@ -160,8 +159,8 @@ if sNormAorta == "fixed":
 
 
 # Testing and Validation ----------------------------------------------------------------------------- #
-y_test_preds = model(X_test)
-y_valid_preds = model(X_valid)
+y_test_preds = model([X_test, vsig_test])
+y_valid_preds = model([X_valid, vsig_valid])
 
 del X_valid, X_test
 gc.collect()

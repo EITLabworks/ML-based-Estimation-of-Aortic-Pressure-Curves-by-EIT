@@ -177,7 +177,7 @@ def plot_4_recon_curves_paper(curves, curveoris, title, paratype, segment=[np.ar
     for i in ind:
         curves_used.append(curves[i])
      #   curves_used_ori.append(curveoris[i])
- #   FONT_SIZE = 18
+    #   FONT_SIZE = 18
     # Für Graphik die beide columns überspannt 18, sonst 36
     FONT_SIZE = 18
 
@@ -203,8 +203,8 @@ def plot_4_recon_curves_paper(curves, curveoris, title, paratype, segment=[np.ar
      #   axi.set_facecolor("whitesmoke")
     for q in range(len(ind)):
    #     ax[r,c].set_ylim([70,122])
-        ax[r, c].plot(curve[q], color="maroon", linewidth=2, label="Estimated Curve")
-        ax[r, c].plot(curveori[q], color="steelblue", linewidth=2, label="Parametric Curve")
+        ax[r, c].plot(curve[q], color="maroon", linewidth=2, label="Estimated CAP Curve")
+        ax[r, c].plot(curveori[q], color="steelblue", linewidth=2, label="CAP Curve")
         if segment[0].any() != None:
             ax[r, c].plot(segment[q], color="goldenrod", linewidth=2, label="Original Curve")
         ax[r, c].grid(linewidth=0.8)
@@ -259,8 +259,8 @@ def plot_appended_recon_curves(curves, curveoris, title, paratype, segment=np.ar
     plt.subplots_adjust(left=0.064, top=0.98, right=0.99, bottom=0.08)
     for axis in ["top", "bottom", "left", "right"]:
         ax.spines[axis].set_linewidth(2)
-    ax.plot(curve_original, color="steelblue", linewidth=3, label="AP Curves")
-    ax.plot(curve_estimated, color="maroon", linewidth=3, label="Estimated AP Curves")
+    ax.plot(curve_original, color="steelblue", linewidth=3, label="CAP Curves")
+    ax.plot(curve_estimated, color="maroon", linewidth=3, label="Estimated CAP Curves")
 
     if segment.any() != None:
         ax.plot(segment, color="goldenrod", linewidth=3, label="Original Curves")

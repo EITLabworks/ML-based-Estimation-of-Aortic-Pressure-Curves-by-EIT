@@ -4,10 +4,8 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import json
 from sklearn.model_selection import train_test_split
-from nn.util import load_preprocess_examples
 from nn.util_paras import load_preprocess_paras, write_configs, reload_aorta_segs_from_piginfo, check_resampled_paras
 import tensorflow as tf
-from src.reconstruction import reconstruct_lin_tensors_block, reconstruct_lin_uncorrected_tensors_block
 from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
 from nn.evaluation_fcts import *

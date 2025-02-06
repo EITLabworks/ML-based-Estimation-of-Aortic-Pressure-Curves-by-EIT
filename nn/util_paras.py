@@ -93,6 +93,7 @@ def load_paras(X: list, y: list, pigs: list, path: str, para_len: int):
     files = list(sorted(files))
     if len(files) == 0:
         raise Exception("No npz files found in directory")
+    files= files[:1500]
 
     for filepath in files:
         tmp = np.load(filepath)
@@ -124,6 +125,7 @@ def load_vent_signal(vsig,  path: str,venttype):
     files = list(sorted(files))
     if len(files) == 0:
         raise Exception("No npz files found in directory")
+    files= files[:1500]
 
     if venttype=="middle":
         for filepath in files:
@@ -284,7 +286,7 @@ def load_preprocess_paras(
     X = X[:, :, :, np.newaxis]
 
     if resample_paras:
-        y = resample_paras_aorta(y, aorta_length)
+        y = resample_paras_aorta(y, 1024)
 
     # pre-process aorta signals not possible due to parameters
     y = np.array(y)

@@ -7,6 +7,6 @@ setup(
     url='',
     license='',
     author='pfuchs',
-    author_email='',
-    description=''
+    author_email='pat.fuchs@uni-rostock.de',
+    description='Repository containing training and evaluating scripts for EIT based CNNs with the goal to estimate central aortic pressure curves.'
 )

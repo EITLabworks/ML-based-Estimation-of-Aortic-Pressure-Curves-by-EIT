@@ -32,9 +32,10 @@ warnings.filterwarnings('ignore')
 data_path = "C:/Users\pfuchs\Documents/Data/EIT/PulHypStudie/DataOriginal/"
 
 mprefix = 'C:/Users/pfuchs\Documents/uni-rostock/python_projects\EIT/nn/models/'
-data_prefix = "C:/Users\\pfuchs\\Documents/Data/Data_npz/PulHyp_k20_20_EITbased1128/Data_Linear/"
+data_prefix = "C:/Users\\pfuchs\\Documents/Data/Data_npz/PulHyp_k18_18HierRescaled/Data_PolyHierarchical/"
 training_examples = ["P01_PulHyp", "P02_PulHyp", "P03_PulHyp", "P04_PulHyp", "P05_PulHyp", "P06_PulHyp", "P07_PulHyp",
                      "P08_PulHyp", "P09_PulHyp", "P10_PulHyp"]
+
 
 # Parsing of arguments ------------------------------------------------------------------------------------------ #
 bSaveModel = True
@@ -171,12 +172,12 @@ if sNormAorta == "fixed":
     y_test = AortaNorm.normalize_forward(y_test)
 
 # Testing and Validation ----------------------------------------------------------------------------- #
-(y_test_preds1, y_test_preds2) = model(X_test)
+(y_test_preds1, y_test_preds2) = model([X_test,vsig_test])
 y_test_preds = append_y(y_test_preds1, y_test_preds2, iLen=1)
 del X_test, y_test_preds1, y_test_preds2
 gc.collect()
 
-(y_valid_preds1, y_valid_preds2) = model(X_valid)
+(y_valid_preds1, y_valid_preds2) = model([X_valid, vsig_valid])
 y_valid_preds = append_y(y_valid_preds1, y_valid_preds2, iLen=1)
 del X_valid, y_valid_preds1, y_valid_preds2
 gc.collect()
@@ -236,7 +237,6 @@ y_valid_preds_recon = recon_paras_block(y_valid_preds, sParaType, bScale=False, 
 
 del y_valid, y_valid_preds
 gc.collect()
-
 y_test_recon_a, y_test_preds_recon_a = set_array_len(y_test_recon, y_test_preds_recon, len(y_test_recon[0]))
 y_valid_recon_a, y_valid_preds_recon_a = set_array_len(y_valid_recon, y_valid_preds_recon, len(y_valid_recon[0]))
 

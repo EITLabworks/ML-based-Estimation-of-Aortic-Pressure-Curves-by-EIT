@@ -6,7 +6,7 @@ class AortaNormalizer:
         self.sParatype = paratype
         self.sMode = mode
         self._make_standard_vector(10)
-        self.dLengthParas= {"Linear":42, "CauchyLorentz":58, "PolyHierarchicalLin": 43, "Full": 1024}
+        self.dLengthParas= {"Linear":42, "CauchyLorentz":58, "PolyHierarchicalLin": 43, "Full": 1024, "PolyHierarchicalLinCurve": 43,}
         if paratype in self.dLengthParas:
             self._make_standard_vector(self.dLengthParas[paratype])
         if self.sMode == "fixed":
@@ -26,7 +26,7 @@ class AortaNormalizer:
                 self.pfFactor[index+3] = 300
                 #evtl. noch mit zero mean arbeiten
 
-            elif self.sParatype=="PolyHierarchicalLin":
+            elif self.sParatype=="PolyHierarchicalLin" or self.sParatype=="PolyHierarchicalLinCurve":
                 self.pfFactor[0] = 1024
                 self.pfFactor[1] = 20
                 self.pfOffset[1] = 85

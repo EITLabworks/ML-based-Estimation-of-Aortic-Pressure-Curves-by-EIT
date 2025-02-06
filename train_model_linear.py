@@ -164,8 +164,8 @@ if sNormAorta == "fixed":
 
 
 # Testing and Validation ----------------------------------------------------------------------------- #
-y_test_preds = model(X_test)
-y_valid_preds = model(X_valid)
+y_test_preds = model([X_test, vsig_test])
+y_valid_preds = model([X_valid, vsig_valid])
 
 del X_valid, X_test
 gc.collect()

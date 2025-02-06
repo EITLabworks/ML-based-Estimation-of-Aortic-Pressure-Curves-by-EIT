@@ -79,7 +79,7 @@ def linearParametrization(seg, kInit, nMax=80, nmsedBLim=-40, bSave=False):
 
             # Precaution measurement if cycles are detected
             if cycleDetected:
-                print("CycleDetected")
+               # print("CycleDetected")
                 cycleCount += 1
                 if len(bp) + 4 < nMaxLines:
                     bp.append(int(0.2 * l))
@@ -96,7 +96,7 @@ def linearParametrization(seg, kInit, nMax=80, nmsedBLim=-40, bSave=False):
         else:
             cont = False
 
-    return signal, kPieces, nmsedB, xiter_eqsampled, yiter
+    return signal, kPieces+1, nmsedB, xiter_eqsampled, yiter
 
 
 
