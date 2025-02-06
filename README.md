@@ -1,9 +1,9 @@
 # Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography
-This repository contains algorithms, training routines and results for EIT based estimation of central aortic pressure (CAP) curves
-\
+This repository contains algorithms, training routines and results for EIT based estimation of central aortic pressure (CAP) curves  
 
 
-__Abstract:__\
+
+__Abstract:__  
 Central aortic pressure is a key hemodynamic
 parameter to monitor and target in clinical practice. As this
 gold standard method is highly invasive and conventional non-
@@ -25,23 +25,25 @@ data, however, random offsets are observed.
 
 
 
-## This repository includes:
-- [Overview](#overview)
+
+
+## Overview:
+- [Structure](#structure)
 - [Installation](#installation)
+- [Evaluation Results](#evaluation)
 - [Author](#author)
 
 
 
-## Overview
+## Structure
 This repository includes:
 - estimte_parametrization.py: A script to create parametric representations of aortic pressure curves and save them as .mat files. Parametric techniques:
-  -- Piecewise Linear Regression
-  -- Spectral Estimation with Cauchy-Lorentz Pulses
-  -- Hierarchical Approach
+  - Piecewise Linear Regression
+  - Spectral Estimation with Cauchy-Lorentz Pulses
+  - Hierarchical Approach
 - train_model_XX.py : To train the with Kerastuner designed CNNs for estimation and save them.
 - eval_nn_XX.ipynb: Notebooks that show the results on the test data sets for all three parameterization techniques.
 
-![Alt Text - description of the image](nn/models/model_specest/TestingCurvesSpecEst.png)
 
 ## Installation
 1. Clone the repository:
@@ -49,7 +51,21 @@ This repository includes:
  git clone https://github.com/EITLabworks/ML-based-Estimation-of-Aortic-Pressure-Curves-by-EIT.git
 ```
 
+
+
+## Evaluation Results
+1. Piecewise Linear Regression
+![Examplerary CAP Curves.](nn/models/model_lin/TestingCurvesLinear.png)
+
+2. Spectral Estimation
+![Examplerary CAP Curves.](nn/models/model_specest/TestingCurvesSpecEst.png)
+
+1. Piecewise Linear Regression
+![Examplerary CAP Curves.](nn/models/model_hier/TestingCurvesHierarchical.png)
+
+
+
 ## Author
-This repository is created by Patricia Fuchs, Institute of Communications Engineering, University of Rostock, Germany.
-The research is explained and summarized in the paper "Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography" for the "Annual International Conference of the IEEE Engineering in Medicine and Biology Society" (EMBC) 2025.
+This repository is created by Patricia Fuchs, Institute of Communications Engineering, University of Rostock, Germany.   
+The research is explained and summarized in the paper "Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography" for the "Annual International Conference of the IEEE Engineering in Medicine and Biology Society" (EMBC) 2025.  
 For questions, please contact: pat.fuchs@uni-rostock.de
