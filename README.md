@@ -73,13 +73,14 @@ The research is explained and summarized in the paper "Machine Learning based Es
 For questions, please contact: pat.fuchs@uni-rostock.de
 
 
-Cite this repo:
-@software{Fuchs_Machine_Learning_based_2025,
-author = {Fuchs, Patricia},
-doi = {10.1109/EMBC58623.2025.11254609},
-license = {MIT},
-month = jan,
-title = {{Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography}},
-url = {https://github.com/EITLabworks/ml-based-estimation-of-aortic-pressure-curves-by-EIT},
-version = {1.0},
-year = {2025}}
+Please read or cite this paper:
+@INPROCEEDINGS{11254609,
+  author={Fuchs, Patricia and Richter, Henryk and Thönes, Jacob P. and Krukewitt, Lisa and Mueller-Graf, Fabian and Zitzmann, Amelie R. and Böhm, Stephan H. and Reuter, Daniel A. and Spors, Sascha and Kuehn, Volker},
+  booktitle={2025 47th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)}, 
+  title={Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-7},
+  keywords={Training;Torso;Electrical impedance tomography;Voltage measurement;Estimation;Training data;Ventilation;Pressure measurement;Monitoring;Tuning},
+  doi={10.1109/EMBC58623.2025.11254609}}
