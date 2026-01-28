@@ -73,8 +73,8 @@ The research is explained and summarized in the paper "Machine Learning based Es
 For questions, please contact: pat.fuchs@uni-rostock.de
 
 
-Please [see] (https://ieeexplore.ieee.org/document/11254609) or cite this paper:
-"""
+Please [see] (https://ieeexplore.ieee.org/document/11254609) or cite this paper:  
+'''
 @INPROCEEDINGS{11254609,
   author={Fuchs, Patricia and Richter, Henryk and Thönes, Jacob P. and Krukewitt, Lisa and Mueller-Graf, Fabian and Zitzmann, Amelie R. and Böhm, Stephan H. and Reuter, Daniel A. and Spors, Sascha and Kuehn, Volker},
   booktitle={2025 47th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)}, 
@@ -85,4 +85,4 @@ Please [see] (https://ieeexplore.ieee.org/document/11254609) or cite this paper:
   pages={1-7},
   keywords={Training;Torso;Electrical impedance tomography;Voltage measurement;Estimation;Training data;Ventilation;Pressure measurement;Monitoring;Tuning},
   doi={10.1109/EMBC58623.2025.11254609}}
-  """
+  '''
