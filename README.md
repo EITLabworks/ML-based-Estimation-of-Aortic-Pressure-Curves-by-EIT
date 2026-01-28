@@ -71,3 +71,15 @@ Clone the repository:
 This repository is created by Patricia Fuchs, Institute of Communications Engineering, University of Rostock, Germany.   
 The research is explained and summarized in the paper "Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography" for the "Annual International Conference of the IEEE Engineering in Medicine and Biology Society" (EMBC) 2025.  
 For questions, please contact: pat.fuchs@uni-rostock.de
+
+
+Cite this repo:
+@software{Fuchs_Machine_Learning_based_2025,
+author = {Fuchs, Patricia},
+doi = {10.1109/EMBC58623.2025.11254609},
+license = {MIT},
+month = jan,
+title = {{Machine Learning based Estimation of Aortic Pressure Curves by Electrical Impedance Tomography}},
+url = {https://github.com/EITLabworks/ml-based-estimation-of-aortic-pressure-curves-by-EIT},
+version = {1.0},
+year = {2025}}
